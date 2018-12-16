@@ -15,6 +15,232 @@ struct Value
     string value;
 };
 
+template <class T>
+struct Node
+{
+    T data;
+    Node* next;
+    Node* prev;
+
+};
+
+class Department
+{
+    int departmentId;
+    string departmentName;
+public:
+    static string fileName;
+    Department()
+    {
+
+    }
+
+    Department(int id, string name)
+    {
+        departmentId =id;
+        departmentName=name ;
+    }
+
+    void setDepartmentId(int deptId)
+    {
+
+        departmentId = deptId;
+    }
+
+    int getDepartmentId()
+    {
+        return departmentId;
+    }
+
+    void setDepartmentName(string deptName)
+    {
+        departmentName = deptName;
+    }
+
+    string getDepartmentName()
+    {
+        return departmentName;
+    }
+
+
+
+
+//just generate temp carry updated value
+    Department generateUpdated(vector<Value> attribute)
+    {
+        Department tempDepartment(-1,"");
+        for(int i=0; i<attribute.size(); i++)
+        {
+            if(attribute[i].name=="departmentId")
+                tempDepartment.setDepartmentId(atoi(attribute[i].value.c_str()));
+            else if(attribute[i].name=="departmentName")
+                tempDepartment.setDepartmentName(attribute[i].value);
+        }
+        return tempDepartment;
+    }
+
+    Node<Department>* genarateNode()
+    {
+        //TODO check if department exist
+        Node<Department>* temp=new Node<Department>;
+        temp->data=*this;
+        return temp;
+    }
+
+    bool compare(Department checkedDepartment)
+    {
+        bool a=true;
+        checkedDepartment.departmentId!= -1 ?
+        (this->departmentId==checkedDepartment.departmentId ? a &= true : a &= false ) :(a&=true);
+
+        checkedDepartment.departmentName != "" ?
+        (this->departmentName==checkedDepartment.departmentName ? a &= true : a &= false ) :(a&=true);
+        return a;
+    }
+
+    void swap(Department newDepartment)
+    {
+        departmentId=newDepartment.departmentId != -1 ? newDepartment.departmentId : departmentId;
+        departmentName=newDepartment.departmentName !="" ? newDepartment.departmentName : departmentName;
+    }
+
+
+    string toString()
+    {
+        stringstream sstm;
+        sstm << departmentId <<";"<< departmentName<<"\n";
+        return sstm.str();
+    }
+
+
+
+    friend istream &operator >> (istream &is,Department &t);
+};
+
+string Department::fileName="department.txt";
+template <class L>
+class Table;
+template <class T>
+T generateUpdatedClass(vector<Value> attribute);
+bool checkValidationDepartment( Table<Department>* departmentLinkedList,int departmentId);
+
+
+template <class L>
+class Table
+{
+    Node<L>* head;
+    Node<L>* tail;
+public:
+    Table()
+    {
+        head=tail=NULL ;
+    }
+
+    void saveToFile()
+    {
+        fstream file;
+        file.open (L::fileName.c_str(),ios::out | ios::trunc);
+        file.seekp (0);
+        Node<L>* temp;
+        temp = head;
+        while (temp != NULL)
+        {
+            file<<temp->data.toString();
+            temp = temp->next;
+        }
+        file.close();
+    }
+
+    void getFromFile()
+    {
+        ifstream outfile;
+        outfile.open (L::fileName.c_str());
+        L data;
+        while ( outfile >>data )
+        {
+            cout<<data.toString();
+            append(data.genarateNode());
+        }
+        outfile.close();
+    }
+
+
+    vector<Node<L>*> search(L requierdNode)
+    {
+        bool a=true;
+        vector<Node<L>*> founedDataList;
+        Node<L>* temp = head;
+        while(temp !=NULL)
+        {
+            if (temp->data.compare(requierdNode))
+            {
+                founedDataList.push_back(temp);
+            }
+            temp =  temp -> next;
+        }
+        return founedDataList;
+    }
+
+    void deleteMethod(Node<L>* temp)
+    {
+
+        if(head == tail)
+        {
+            head = tail = NULL;
+        }
+        else if(temp == head)
+        {
+            head =  temp -> next;
+            head ->prev = NULL;
+        }
+        else if (temp == tail)
+        {
+            tail = temp ->prev;
+            tail ->next = NULL;
+        }
+        else
+        {
+            temp->next->prev = temp->prev;
+            temp->prev->next = temp->next;
+        }
+        delete temp;
+    }
+
+    void append(Node<L>* temp)
+    {
+        if(temp!=NULL)
+        {
+            if(head == NULL)
+            {
+                head = tail = temp ;
+                temp -> prev = NULL;
+                temp -> next = NULL;
+            }
+            else
+            {
+
+                temp -> prev = tail;
+                temp -> next = NULL;
+                tail -> next = temp;
+                tail = temp;
+            }
+        }
+    }
+
+    void display ()
+    {
+
+        Node<L>* temp =  head;
+        while(temp != NULL)
+        {
+            cout<<temp->data.toString()<<endl;
+            temp = temp ->next;
+        }
+    }
+
+};
+
+
 class Student
 {
     int studentId;
@@ -24,6 +250,7 @@ class Student
     int departmentId;
 public:
     static string fileName;
+    static Table<Department>* dependantDepartmentTable;
     Student()
     {
     }
@@ -105,13 +332,21 @@ public:
         return tempStudent;
     }
 
-//    Node<Student>* genarateNode()
-//    {
-//        //TODO check if department exist
-//        Node<Student>* temp=new Node<Student>;
-//        temp->data=*this;
-//        return temp;
-//    }
+    Node<Student>* genarateNode()
+    {
+
+        //TODO check if department exist
+        if(checkValidationDepartment(Student::dependantDepartmentTable,departmentId))
+        {
+            Node<Student>* temp=new Node<Student>;
+            temp->data=*this;
+            return temp;
+        }
+        else
+            cout<<"Can't Add This Student , his Department not in list"<<endl;
+        return NULL;
+    }
+
     bool compare(Student checkedStudent)
     {
         bool a=true;
@@ -148,376 +383,25 @@ public:
 
 };
 string Student::fileName="student.txt";
-class Department
+Table<Department>* Student::dependantDepartmentTable;
+
+
+bool checkValidationDepartment( Table<Department>* departmentLinkedList,int departmentId)
 {
-    int departmentId;
-    string departmentName;
-public:
-    static string fileName;
-    Department()
-    {
-
-    }
-    void swap(Department newDepartment)
-    {
-        departmentId=newDepartment.departmentId != -1 ? newDepartment.departmentId : departmentId;
-        departmentName=newDepartment.departmentName !="" ? newDepartment.departmentName : departmentName;
-    }
-
-
-    Department(int id, string name)
-    {
-        departmentId =id;
-        departmentName=name ;
-    }
-
-    void setDepartmentId(int deptId)
-    {
-
-        departmentId = deptId;
-    }
-
-    int getDepartmentId()
-    {
-        return departmentId;
-    }
-
-    void setDepartmentName(string deptName)
-    {
-        departmentName = deptName;
-    }
-
-    string getDepartmentName()
-    {
-        return departmentName;
-    }
-
-
-};
-
-string Department::fileName="department.txt";
-
-template <class T>
-struct Node
-{
-    T data;
-    Node* next;
-    Node* prev;
-
-};
-
-struct DepartmentNode
-{
-    Department department;
-    DepartmentNode* next;
-    DepartmentNode* prev;
-};
-
-
-class DepartmentLinkedList
-{
-    DepartmentNode* head;
-    DepartmentNode* tail;
-public:
-    DepartmentLinkedList()
-    {
-        head=tail=NULL ;
-    }
-
-
-
-    DepartmentNode* searchById(int id)
-    {
-
-        DepartmentNode* temp = head;
-        while(temp !=NULL)
-        {
-            if (id == temp->department.getDepartmentId())
-            {
-                return temp;
-            }
-            temp =  temp -> next;
-        }
-        return NULL;
-    }
-
-
-    DepartmentNode*  searchByName(string departmentName)
-    {
-
-        DepartmentNode*  temp = head;
-        while(temp !=NULL)
-        {
-            if (departmentName== temp->department.getDepartmentName())
-            {
-                return temp;
-            }
-            temp =  temp -> next;
-        }
-        return NULL;
-
-    }
-
-
-    void deleteById(int id)
-    {
-
-        DepartmentNode* temp = searchById(id);
-        if(temp == NULL)
-        {
-            return;
-        }
-        if(head == tail)
-        {
-            head = tail = NULL;
-        }
-        else if(temp == head)
-        {
-            head =  temp -> next;
-            head ->prev = NULL;
-        }
-        else if (temp == tail)
-        {
-            tail = temp ->prev;
-            tail ->next = NULL;
-        }
-        else
-        {
-            temp->next->prev = temp->prev;
-            temp->prev->next = temp->next;
-        }
-        delete temp;
-
-    }
-
-    void deleteByName(string name)
-    {
-
-        DepartmentNode* temp = searchByName(name);
-        if(temp == NULL)
-        {
-            return;
-        }
-        if(head == tail)
-        {
-            head = tail  = NULL;
-        }
-        else if(temp == head)
-        {
-            head =  temp -> next;
-            head ->prev = NULL;
-        }
-        else if (temp == tail)
-        {
-            tail = temp ->prev;
-            tail ->next = NULL;
-        }
-        else
-        {
-            temp->next->prev = temp->prev;
-            temp->prev->next = temp->next;
-        }
-        delete temp;
-    }
-
-
-    void  append( int departmentId,string departmentName)
-    {
-
-        DepartmentNode* temp =  new DepartmentNode;
-        temp->department.setDepartmentId(departmentId);
-        temp->department.setDepartmentName(departmentName);
-
-        if(head == NULL)
-        {
-            head = tail = temp ;
-            temp -> prev = NULL;
-            temp -> next = NULL;
-        }
-        else
-        {
-            temp -> prev = tail;
-            temp -> next = NULL;
-            tail -> next = temp;
-            tail = temp;
-        }
-
-    }
-
-
-    void display ()
-    {
-
-        DepartmentNode* temp =  head;
-        while(temp != NULL)
-        {
-            cout<< temp ->department.getDepartmentId() << ":"<<
-                temp ->department.getDepartmentName()<<endl;
-            temp = temp ->next;
-        }
-    }
-};
-
-
-
-int checkValidationDepartment( DepartmentLinkedList departmentLinkedList,int departmentId)
-{
-    if(departmentLinkedList.searchById(departmentId) != NULL)
-        return 1;
+    stringstream sstm;
+    sstm << departmentId;
+    Value paramter;
+    paramter.name="departmentId";
+    paramter.value=sstm.str();
+    vector<Value> temp;
+    temp.push_back(paramter);
+    if(departmentLinkedList->search(generateUpdatedClass<Department>(temp)).size() >0)
+        return true;
     else
-        return -1;
+        return false;
+
 }
 
-template <class L>
-class Table
-{
-    Node<L>* head;
-    Node<L>* tail;
-public:
-
-    Table()
-    {
-        head=tail=NULL ;
-    }
-
-    void saveToFile()
-    {
-        fstream file;
-        file.open (L::fileName.c_str(),ios::out | ios::trunc);
-        file.seekp (0);
-        Node<L>* temp;
-        temp = head;
-        while (temp != NULL)
-        {
-            file<<temp->data.toString();
-            temp = temp->next;
-        }
-        file.close();
-    }
-
-    void getFromFile()
-    {
-        ifstream outfile;
-        outfile.open (L::fileName.c_str());
-        L data;
-        while ( outfile >>data )
-        {
-            cout<<data.toString();
-            append(data.genarateNode());
-        }
-        outfile.close();
-    }
-
-
-    vector<Node<L>*> search(L requierdNode)
-    {
-        bool a=true;
-        vector<Node<L>*> founedStudentList;
-        Node<L>* temp = head;
-        while(temp !=NULL)
-        {
-            if (temp->data.compare(requierdNode))
-            {
-                founedStudentList.push_back(temp);
-            }
-            temp =  temp -> next;
-        }
-        return founedStudentList;
-    }
-
-    void deleteMethod(Node<L>* temp)
-    {
-
-        if(head == tail)
-        {
-            head = tail = NULL;
-        }
-        else if(temp == head)
-        {
-            head =  temp -> next;
-            head ->prev = NULL;
-        }
-        else if (temp == tail)
-        {
-            tail = temp ->prev;
-            tail ->next = NULL;
-        }
-        else
-        {
-            temp->next->prev = temp->prev;
-            temp->prev->next = temp->next;
-        }
-        delete temp;
-    }
-
-    void append(Node<L>* temp)
-    {
-
-        if(head == NULL)
-        {
-            head = tail = temp ;
-            temp -> prev = NULL;
-            temp -> next = NULL;
-        }
-        else
-        {
-            temp -> prev = tail;
-            temp -> next = NULL;
-            tail -> next = temp;
-            tail = temp;
-        }
-    }
-
-
-    void  append(int studentId,string studentFirstName, string studentLastName,int studentAge,
-                 int departmentId,DepartmentLinkedList departmentLinkedList)
-    {
-
-        if (checkValidationDepartment(departmentLinkedList,departmentId) == 1)
-        {
-            Node<L>* temp =  new Node<L>;
-            temp ->data.setStudentId(studentId);
-            temp ->data.setStudentFirstName(studentFirstName);
-            temp ->data.setStudentLastName(studentLastName);
-            temp ->data.setStudentAge(studentAge);
-            temp ->data.setDepartmentId(departmentId);
-
-            if(head == NULL)
-            {
-                head = tail = temp ;
-                temp -> prev = NULL;
-                temp -> next = NULL;
-            }
-            else
-            {
-                temp -> prev = tail;
-                temp -> next = NULL;
-                tail -> next = temp;
-                tail = temp;
-            }
-
-        }
-        else
-        {
-            cout<<"Id is not available in department table"<<endl;
-        }
-    }
-
-
-    void display ()
-    {
-
-        Node<L>* temp =  head;
-        while(temp != NULL)
-        {
-            cout<< temp ->data.getStudentId() << ":"<< temp ->data.getStudentFirstName()
-                << ":"<<temp->data.getStudentLastName()<<":"<<temp->data.getStudentAge()
-                <<":"<< temp->data.getDepartmentId()<<endl;
-            temp = temp ->next;
-        }
-    }
-
-};
 
 template <class L>
 bool update(L tableAsLinkedList,vector<Value> conditions,vector<Value> setOfValues);
@@ -528,8 +412,7 @@ void insertMembers(L tableAsLinkedList,vector<Value> data);
 template <class L,class N,class C>
 bool deleteMembers(L tableAsLinkedList,vector<Value> condition);
 
-template <class T>
-T generateUpdatedClass(Value attribute[],int size);
+
 
 istream &operator >> (istream &is,Student &t)
 {
@@ -553,20 +436,35 @@ istream &operator >> (istream &is,Student &t)
     return is;
 }
 
+istream &operator >> (istream &is,Department &t)
+{
+
+    is >> t.departmentId;
+    is.ignore(1,';');
+    getline(is,t.departmentName);
+    return is;
+}
+
+
+
 int main()
 {
-    DepartmentLinkedList departmentLinkedList;
-    departmentLinkedList.append(1,"dept");
-    departmentLinkedList.append(2,"dept");
-    departmentLinkedList.append(3,"dept");
-    departmentLinkedList.append(4,"dept");
+    Table<Department> departmentLinkedList;
+    Student::dependantDepartmentTable=&departmentLinkedList;
+    departmentLinkedList.append( Department(1,"dept").genarateNode());
+    departmentLinkedList.append(Department(2,"dept").genarateNode());
+    departmentLinkedList.append(Department(3,"dept").genarateNode());
+    departmentLinkedList.append(Department(4,"dept").genarateNode());
 //    departmentLinkedList.display();
     cout<<"------------------------------------------"<<endl;
     Table<Student> studentLinkedList;
-    studentLinkedList.append(1,"ismail","hamda",15,2,departmentLinkedList);
-    studentLinkedList.append(2,"ahmed","hamda",15,3,departmentLinkedList);
+    studentLinkedList.append(Student(1,"ismail","hamda",15,8).genarateNode());
+    studentLinkedList.display();
+    studentLinkedList.append(Student(2,"ahmed","hamda",15,3).genarateNode());
+    studentLinkedList.display();
 //    studentLinkedList.display();
-    studentLinkedList.append(3,"hassan","mostafe",20,5,departmentLinkedList);
+    studentLinkedList.append(Student(3,"hassan","mostafe",20,1).genarateNode());
+    studentLinkedList.display();
 //    cout<<"------------------------------------------"<<endl;
 //    studentLinkedList.deleteById(1);
 //    studentLinkedList.display();
@@ -574,11 +472,11 @@ int main()
 //    studentLinkedList.append(3,"hassan","mostafe",20,3,departmentLinkedList);
 //    studentLinkedList.display();
 //    cout<<"------------------------------------------"<<endl;
-    Student ss(-1,"","hamda",-1,-1);
-    vector<Node<Student>*> list =studentLinkedList.search(ss);
-    cout<<list.size();
-    for(int i=0; i<list.size(); i++)
-        cout<<list[i]->data.toString();
+//    Student ss(-1,"","hamda",-1,-1);
+//    vector<Node<Student>*> list =studentLinkedList.search(ss);
+//    cout<<list.size();
+//    for(int i=0; i<list.size(); i++)
+//        cout<<list[i]->data.toString();
 
 //
 //    Table<Student> temp;
@@ -637,16 +535,6 @@ T generateUpdatedClass(vector<Value> attribute)
     T temp;
     return temp.generateUpdated(attribute);
 }
-//
-//void solveSetClause(string condition)
-//{
-//    char * pch;
-//    pch = strtok (condition.c_str(),',');
-//    while (pch != NULL)
-//    {
-//        printf ("%s\n",pch);
-//        pch = strtok (NULL, " ,.-".c_str());
-//    }
-//}
+
 
 
