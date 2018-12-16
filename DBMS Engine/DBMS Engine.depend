@@ -1,0 +1,25 @@
+# depslib dependency file v1.0
+1544680004 source:f:\iti\data structure & algorithm\dbms engine\main.cpp
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<iostream>
+	<fstream>
+
+1544979376 source:e:\iti courses\code block\datastructur\project\datastructureproject\dbms engine\main.cpp
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<iostream>
+	<fstream>
+	<sstream>
+	<vector>
+
+1544805468 source:c:\users\abdelrahman\desktop\datastructureproject\dbms engine\main.cpp
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<iostream>
+	<fstream>
+	<sstream>
+
