@@ -118,11 +118,10 @@ public:
 };
 
 string Department::fileName="department.txt";
+
 template <class L>
 class Table;
-template <class T>
-T generateUpdatedClass(vector<Value> attribute);
-bool checkValidationDepartment( Table<Department>* departmentLinkedList,int departmentId);
+
 
 
 template <class L>
@@ -240,6 +239,35 @@ public:
 
 };
 
+class Utilities
+{
+public:
+    static bool checkValidationDepartment( Table<Department>* departmentLinkedList,int departmentId)
+{
+    stringstream sstm;
+    sstm << departmentId;
+    Value paramter;
+    paramter.name="departmentId";
+    paramter.value=sstm.str();
+    vector<Value> temp;
+    temp.push_back(paramter);
+    if(departmentLinkedList->search(generateUpdatedClass<Department>(temp)).size() >0)
+        return true;
+    else
+        return false;
+
+}
+
+template <class T>
+    static T generateUpdatedClass(vector<Value> attribute)
+{
+    T temp;
+    return temp.generateUpdated(attribute);
+}
+
+};
+
+
 
 class Student
 {
@@ -336,7 +364,7 @@ public:
     {
 
         //TODO check if department exist
-        if(checkValidationDepartment(Student::dependantDepartmentTable,departmentId))
+        if(Utilities::checkValidationDepartment(Student::dependantDepartmentTable,departmentId))
         {
             Node<Student>* temp=new Node<Student>;
             temp->data=*this;
@@ -386,32 +414,55 @@ string Student::fileName="student.txt";
 Table<Department>* Student::dependantDepartmentTable;
 
 
-bool checkValidationDepartment( Table<Department>* departmentLinkedList,int departmentId)
+
+class OurSQL
 {
-    stringstream sstm;
-    sstm << departmentId;
-    Value paramter;
-    paramter.name="departmentId";
-    paramter.value=sstm.str();
-    vector<Value> temp;
-    temp.push_back(paramter);
-    if(departmentLinkedList->search(generateUpdatedClass<Department>(temp)).size() >0)
-        return true;
-    else
-        return false;
+public:
+    template <class L,class N,class C>
+    static bool update(L tableAsLinkedList,vector<Value> conditions,vector<Value> setOfValues)
+    {
+        C condition=Utilities::generateUpdatedClass<C>(conditions);
+        vector<N*> searched=tableAsLinkedList.search(condition);
+        if(searched.size()>0)
+        {
+            C comperable=Utilities::generateUpdatedClass<C>(setOfValues);
+            for(int i=0; i<searched.size(); i++)
+            {
+                searched[i]->data.swap(comperable); //ToDo Change Node To be generic
+            }
 
-}
+            return true;
+        }
+        else
+            return false;
+    }
 
 
-template <class L>
-bool update(L tableAsLinkedList,vector<Value> conditions,vector<Value> setOfValues);
+    template <class L,class N,class C>
+    static bool deleteMembers(L tableAsLinkedList,vector<Value> conditions)
+    {
+        C condition=Utilities::generateUpdatedClass<C>(conditions);
+        vector<N*> searched=tableAsLinkedList.search(condition);
+        if(searched.size() > 0)
+        {
+            for(int i= 0 ; i< searched.size() ; i++)
+            {
+                tableAsLinkedList.deleteMethod(searched[i]);
+            }
+            return true;
+        }
+        else
+            return false;
+    }
+    template <class L,class C>
+    static void insertMembers(L tableAsLinkedList,vector<Value> data)
+    {
+        C comperable=Utilities::generateUpdatedClass<C>(data);
+        tableAsLinkedList.append(comperable);
+    }
 
-template <class L,class C>
-void insertMembers(L tableAsLinkedList,vector<Value> data);
 
-template <class L,class N,class C>
-bool deleteMembers(L tableAsLinkedList,vector<Value> condition);
-
+};
 
 
 istream &operator >> (istream &is,Student &t)
@@ -485,56 +536,7 @@ int main()
     return 1;
 }
 
-template <class L,class N,class C>
-bool update(L tableAsLinkedList,vector<Value> conditions,vector<Value> setOfValues)
-{
-    C condition=generateUpdatedClass<C>(conditions);
-    vector<N*> searched=tableAsLinkedList.search(condition);
-    if(searched.size()>0)
-    {
-        C comperable=generateUpdatedClass<C>(setOfValues);
-        for(int i=0; i<searched.size(); i++)
-        {
-            searched[i]->data.swap(comperable); //ToDo Change Node To be generic
-        }
 
-        return true;
-    }
-    else
-        return false;
-}
-
-
-template <class L,class N,class C>
-bool deleteMembers(L tableAsLinkedList,vector<Value> conditions)
-{
-    C condition=generateUpdatedClass<C>(conditions);
-    vector<N*> searched=tableAsLinkedList.search(condition);
-    if(searched.size() > 0)
-    {
-        for(int i= 0 ; i< searched.size() ; i++)
-        {
-            tableAsLinkedList.deleteMethod(searched[i]);
-        }
-        return true;
-    }
-    else
-        return false;
-}
-template <class L,class C>
-void insertMembers(L tableAsLinkedList,vector<Value> data)
-{
-    C comperable=generateUpdatedClass<C>(data);
-    tableAsLinkedList.append(comperable);
-}
-
-
-template <class T>
-T generateUpdatedClass(vector<Value> attribute)
-{
-    T temp;
-    return temp.generateUpdated(attribute);
-}
 
 
 
