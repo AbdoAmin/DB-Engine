@@ -9,7 +9,22 @@
 #include <sstream>
 #include <vector>
 using namespace std;
-struct Value
+
+void selectOperation(string queryStatment) ;
+void deleteOperation(string queryStatment);
+void updateOpertaion(string queryStatment);
+void insertOpertaion(string insetQuery);
+bool isFileCreated(string fileName);
+bool isValidColumns(vector<string> column,string fileName);
+vector<string> splitColumn (string columns);
+string removeSpaces(string spaceToRemove);
+void analyseQuery(string query) ;
+
+
+const string INVALID_QUERY="query out of scope \n " ;
+using namespace std;
+
+struct Condition
 {
     string name;
     string value;
@@ -66,7 +81,7 @@ public:
 
 
 //just generate temp carry updated value
-    Department generateUpdated(vector<Value> attribute)
+    Department generateUpdated(vector<Condition> attribute)
     {
         Department tempDepartment(-1,"");
         for(int i=0; i<attribute.size(); i++)
@@ -121,7 +136,6 @@ string Department::fileName="department.txt";
 
 template <class L>
 class Table;
-
 
 
 template <class L>
@@ -243,30 +257,30 @@ class Utilities
 {
 public:
     static bool checkValidationDepartment( Table<Department>* departmentLinkedList,int departmentId)
-{
-    stringstream sstm;
-    sstm << departmentId;
-    Value paramter;
-    paramter.name="departmentId";
-    paramter.value=sstm.str();
-    vector<Value> temp;
-    temp.push_back(paramter);
-    if(departmentLinkedList->search(generateUpdatedClass<Department>(temp)).size() >0)
-        return true;
-    else
-        return false;
+    {
+        stringstream sstm;
+        sstm << departmentId;
+        Condition paramter;
+        paramter.name="departmentId";
+        paramter.value=sstm.str();
+        vector<Condition> temp;
+        temp.push_back(paramter);
+        if(departmentLinkedList->search(generateUpdatedClass<Department>(temp)).size() >0)
+            return true;
+        else
+            return false;
 
-}
+    }
 
-template <class T>
-    static T generateUpdatedClass(vector<Value> attribute)
-{
-    T temp;
-    return temp.generateUpdated(attribute);
-}
+    template <class T>
+    static T generateUpdatedClass(vector<Condition> attribute)
+    {
+        T temp;
+        return temp.generateUpdated(attribute);
+    }
 
 };
-
+Table<Department> departmentTable;
 
 
 class Student
@@ -340,21 +354,21 @@ public:
     }
 
 
-//just generate temp carry updated value
-    Student generateUpdated(vector<Value> attribute)
+//just generate temp carry updated Condition
+    Student generateUpdated(vector<Condition> attribute)
     {
         Student tempStudent(-1,"","",-1,-1);
         for(int i=0; i<attribute.size(); i++)
         {
-            if(attribute[i].name=="id")
+            if(attribute[i].name=="studentId")
                 tempStudent.setStudentId(atoi(attribute[i].value.c_str()));
-            else if(attribute[i].name=="firstName")
+            else if(attribute[i].name=="studentFirstName")
                 tempStudent.setStudentFirstName(attribute[i].value);
-            else if(attribute[i].name=="lastName")
+            else if(attribute[i].name=="studentLastName")
                 tempStudent.setStudentLastName(attribute[i].value);
-            else if(attribute[i].name=="age")
+            else if(attribute[i].name=="studentAge")
                 tempStudent.setStudentAge(atoi(attribute[i].value.c_str()));
-            else if(attribute[i].name=="depId")
+            else if(attribute[i].name=="departmentId")
                 tempStudent.setDepartmentId(atoi(attribute[i].value.c_str()));
         }
         return tempStudent;
@@ -364,7 +378,7 @@ public:
     {
 
         //TODO check if department exist
-        if(Utilities::checkValidationDepartment(Student::dependantDepartmentTable,departmentId))
+        if(Utilities::checkValidationDepartment(&departmentTable,departmentId))
         {
             Node<Student>* temp=new Node<Student>;
             temp->data=*this;
@@ -419,7 +433,7 @@ class OurSQL
 {
 public:
     template <class L,class N,class C>
-    static bool update(L tableAsLinkedList,vector<Value> conditions,vector<Value> setOfValues)
+    static bool updateQuery(L & tableAsLinkedList,vector<Condition> conditions,vector<Condition> setOfValues)
     {
         C condition=Utilities::generateUpdatedClass<C>(conditions);
         vector<N*> searched=tableAsLinkedList.search(condition);
@@ -439,7 +453,7 @@ public:
 
 
     template <class L,class N,class C>
-    static bool deleteMembers(L tableAsLinkedList,vector<Value> conditions)
+    static bool deleteQuery(L& tableAsLinkedList,vector<Condition> conditions)
     {
         C condition=Utilities::generateUpdatedClass<C>(conditions);
         vector<N*> searched=tableAsLinkedList.search(condition);
@@ -455,7 +469,7 @@ public:
             return false;
     }
     template <class L,class C>
-    static void insertMembers(L tableAsLinkedList,vector<Value> data)
+    static void insertQuery(L& tableAsLinkedList,vector<Condition> data)
     {
         C comperable=Utilities::generateUpdatedClass<C>(data);
         tableAsLinkedList.append(comperable);
@@ -496,47 +510,433 @@ istream &operator >> (istream &is,Department &t)
     return is;
 }
 
+Table<Student> studentTable;
 
 
+
+bool isValidColumns(vector<Condition> column,string fileName);
+
+string removeSpaces(string spaceToRemove)
+{
+    int found= -1;
+    do
+    {
+        found = spaceToRemove.find(" ",found+1);
+        if (found!=-1)
+        {
+            spaceToRemove=spaceToRemove.substr(0,found) + spaceToRemove.substr(found+1);
+        }
+    }
+    while(found!=-1);
+    return spaceToRemove;
+}
+vector<string> splitColumn(string columns)
+{
+    int pos=0;
+    vector<string> column;
+    do
+    {
+        column.push_back(columns.substr(0,columns.find(",")));
+        pos = columns.find(",")+1;
+        columns= columns.substr(pos,columns.length());
+    }
+    while(pos != 0);
+    return column;
+}
+vector<Condition> splitCondition(string  conditionsStatment)
+{
+    vector<Condition> conditionVector ;
+    Condition condition;
+    int pos=0 ;
+    do
+    {
+        condition.name=conditionsStatment.substr(0,conditionsStatment.find("="));
+        pos = conditionsStatment.find("=")+1;
+        conditionsStatment= conditionsStatment.substr(pos,conditionsStatment.length());
+        if(conditionsStatment.find("and")!=-1)
+        {
+            condition.value=conditionsStatment.substr(0,conditionsStatment.find("and"));
+            pos = conditionsStatment.find("and")+3;
+            conditionsStatment= conditionsStatment.substr(pos,conditionsStatment.length());
+        }
+        else
+        {
+            condition.value=conditionsStatment;
+            conditionsStatment="";
+        }
+        conditionVector.push_back(condition);
+    }
+    while (conditionsStatment!="");
+
+    return conditionVector ;
+}
+vector<Condition> splitColumnToUpdate(string  conditionsStatment)
+{
+    //cout<<conditionsStatment<<"conditionsStatment";
+    vector<Condition> conditionVector ;
+    Condition condition;
+    int pos=0 ;
+    do
+    {
+        condition.name=conditionsStatment.substr(0,conditionsStatment.find("="));
+        pos = conditionsStatment.find("=")+1;
+        conditionsStatment= conditionsStatment.substr(pos,conditionsStatment.length());
+        if(conditionsStatment.find(",")!=-1)
+        {
+            condition.value=conditionsStatment.substr(0,conditionsStatment.find(","));
+            pos = conditionsStatment.find(",")+1;
+            conditionsStatment= conditionsStatment.substr(pos,conditionsStatment.length());
+        }
+        else
+        {
+            condition.value=conditionsStatment;
+            conditionsStatment="";
+        }
+        conditionVector.push_back(condition);
+    }
+    while (conditionsStatment!="");
+
+    return conditionVector ;
+}
+void selectOperation(string queryStatment)
+{
+    string columnStatment,conditionStatment,fileName;
+    vector<string> columns ;
+    vector<Condition> condition ;
+    columnStatment = queryStatment.substr(0, queryStatment.find("from"));
+    queryStatment = queryStatment.substr(queryStatment.find("from")+4,queryStatment.length()) ;
+    if(queryStatment.find("where")!=-1)
+    {
+        fileName = removeSpaces(queryStatment.substr(0,queryStatment.find("where"))) ;
+        fileName=removeSpaces(fileName);
+        queryStatment = queryStatment.substr(queryStatment.find("where")+5,queryStatment.length()) ;
+        conditionStatment = queryStatment.substr(0,queryStatment.length());
+        columns=splitColumn(removeSpaces(columnStatment));
+        condition=splitCondition(removeSpaces(conditionStatment));
+
+    }
+    else
+    {
+        cout<<fileName<<"fileName"<<endl;
+
+        fileName = removeSpaces(queryStatment) ;
+        columns=splitColumn(removeSpaces(columnStatment));
+        condition=splitCondition(removeSpaces(conditionStatment)) ;
+    }
+
+    cout<<fileName<<"fileName"<<endl;
+    if(isFileCreated(fileName))
+    {
+
+        if(isValidColumns(columns,fileName)&&isValidColumns(condition,fileName))
+        {
+            cout<<"valid query " <<endl;
+        }
+        else
+        {
+            cout<<INVALID_QUERY<<endl;
+        }
+//        for(int i=0; i<c.size(); i++)
+//        {
+//            cout<<" condition name "<<c[i].name ;
+//            cout<<" condition value "<<c[i].value<<endl;
+//        }
+//        for(int i=0; i<l.size(); i++)
+//        {
+//            cout<<" coulmn  "<<l[i]<<endl;
+//        }
+//        cout<<fileName<<" = file name ";
+    }
+    else
+    {
+        cout<<INVALID_QUERY<<endl;
+
+    }
+
+
+
+}
+void deleteOperation(string queryStatment)
+{
+    string conditionStatment,fileName;
+    if(queryStatment.find("from")!=-1 && queryStatment.find("where")!=-1)
+    {
+        cout<<endl<<queryStatment<<endl;
+        fileName = removeSpaces(queryStatment.substr(queryStatment.find("from")+4,queryStatment.find("where")-5));
+        queryStatment = removeSpaces(queryStatment.substr(queryStatment.find("from")+4,queryStatment.length())) ;
+        conditionStatment = queryStatment.substr(queryStatment.find("where")+5,queryStatment.length());
+        cout <<endl<<fileName <<"file name "<<endl;
+        if(isFileCreated(removeSpaces(fileName)))
+        {
+            vector<Condition> conditons=splitCondition(removeSpaces(conditionStatment));
+            if(isValidColumns(conditons,fileName))
+                cout<<"query  valid "<<endl;
+            else
+            {
+                cout<<INVALID_QUERY;
+            }
+
+        }
+        else
+        {
+            cout<<INVALID_QUERY;
+        }
+    }
+    else
+    {
+        cout<<INVALID_QUERY;
+    }
+}
+void updateOpertaion(string queryStatment)
+{
+    string fileName, columnsToUpdate,conditions;
+    fileName = removeSpaces(queryStatment.substr(0, queryStatment.find("set")));
+    if(isFileCreated(removeSpaces(fileName))&& queryStatment.find("set")!=-1)
+    {
+        queryStatment=queryStatment.substr(queryStatment.find("set")+3,queryStatment.length());
+        if(queryStatment.find("where")!=-1)
+        {
+            columnsToUpdate = queryStatment.substr(0,queryStatment.find("where")) ;
+            queryStatment=queryStatment.substr(queryStatment.find("where")+5,queryStatment.length());
+            conditions = queryStatment.substr(0,queryStatment.length()) ;
+            vector<Condition> columnsAndValuesToUpdate= splitColumnToUpdate(removeSpaces(columnsToUpdate));
+            vector<Condition> condition=splitCondition(removeSpaces(conditions));
+            if (isValidColumns(columnsAndValuesToUpdate,fileName))
+            {
+              if(fileName=="student")
+              {
+                  OurSQL::updateQuery(studentTable,condition,columnsAndValuesToUpdate)
+              }
+              else if (fileName=="department")
+              {
+
+              }
+            }
+            else
+            {
+                cout<<INVALID_QUERY;
+
+            }
+
+
+        }
+        // no condition and will update all
+        // specific case need to handle it
+        else
+        {
+            columnsToUpdate = queryStatment ;
+            vector<Condition> columnsAndValuesToUpdate= splitCondition(columnsToUpdate);
+
+            for(int i=0; i<columnsAndValuesToUpdate.size(); i++)
+            {
+                cout<<columnsAndValuesToUpdate[i].name<<endl;
+                cout<<columnsAndValuesToUpdate[i].value<<endl;
+            }
+            cout<<"update with no condition";
+        }
+    }
+    else
+    {
+        cout<<INVALID_QUERY;
+
+
+    }
+}
+bool isFileCreated(string fileName)
+{
+    if(fileName=="student" || fileName=="department")
+        return true;
+}
+void insertOperation(string insertQuery)
+{
+
+    string fileName, attribute;
+    insertQuery=removeSpaces(insertQuery);
+    if(insertQuery.find("into")!=-1 && insertQuery.find("values")!=-1&&insertQuery.find("(")!=-1)
+    {
+        fileName = insertQuery.substr(insertQuery.find("into")+4, insertQuery.find("values")-4);
+        cout<<fileName<<endl;
+        insertQuery=removeSpaces(insertQuery);
+        if(isFileCreated(fileName))
+        {
+            attribute=insertQuery.substr(insertQuery.find("(")+1, insertQuery.find(")")-8);
+            vector<string> valuesToInsert=splitColumn(attribute);
+
+            if(fileName=="student" && valuesToInsert.size()==5)
+            {
+                //OurSQL::insertQuery(studentTable,valuesToInsert);
+            }
+            else if (fileName=="department" && valuesToInsert.size()==2)
+            {
+
+            }
+
+
+
+            }
+        //attribute=insertQuery.substr(insertQuery.find(into)+4,insertQuery.length())
+    }
+    else
+    {
+        cout<<" invalid query "<<endl;
+    }
+}
+//template<class T>
+bool isValidColumns(vector<string> column,string fileName)
+{
+    vector<string> studentColumns ;
+    vector<string> departmentColumns ;
+    studentColumns.push_back("studentId");
+    studentColumns.push_back("studentFirstName");
+    studentColumns.push_back("studentLastName");
+    studentColumns.push_back("studentAge");
+    studentColumns.push_back("departmentId");
+    departmentColumns.push_back("departmentId");
+    departmentColumns.push_back("departmentName");
+    cout <<fileName;
+    if (fileName == "student")
+    {
+
+        for(int i=0; i<column.size(); i++)
+        {
+            cout<<endl <<column[i] <<"is equal ";
+            cout <<studentColumns[0] <<endl;
+            if(column[i] == studentColumns[0]||column[i] == studentColumns[1]
+                    || column[i] == studentColumns[2]||column[i] == studentColumns[3]||column[i] == studentColumns[4])
+            {
+                return true ;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+    else if (fileName=="department")
+    {
+        for(int i=0; i<column.size(); i++)
+        {
+            for(int j=0; j<column.size(); j++)
+            {
+                if(column[i]== departmentColumns[0] || column[i]==departmentColumns[1])
+                {
+                    cout<<column[i] <<endl;
+                    cout<< departmentColumns[0]<<endl;
+                    cout<<departmentColumns[1]<<endl;
+
+                    return true ;
+                }
+                else
+                {
+                    cout<<column[i] << departmentColumns[0]<<endl;
+                    cout<<departmentColumns[1]<<endl;
+                    return false;
+                }
+            }
+        }
+    }
+
+}
+bool isValidColumns(vector<Condition> column,string fileName)
+{
+    vector<string> studentColumns ;
+    vector<string> departmentColumns ;
+    studentColumns.push_back("studentId");
+    studentColumns.push_back("studentFirstName");
+    studentColumns.push_back("studentLastName");
+    studentColumns.push_back("studentAge");
+    studentColumns.push_back("departmentId");
+    departmentColumns.push_back("departmentId");
+    departmentColumns.push_back("departmentName");
+    if (fileName=="student")
+    {
+        for(int i=0; i<column.size(); i++)
+        {
+            if(column[i].name == studentColumns[0]||column[i].name == studentColumns[1] || column[i].name == studentColumns[2]
+                    ||column[i].name == studentColumns[3]||column[i].name == studentColumns[4])
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+    else if (fileName=="department")
+    {
+        for(int i=0; i<column.size(); i++)
+        {
+            if(column[i].name== departmentColumns[0] || column[i].name==departmentColumns[1])
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+
+            }
+        }
+    }
+}
 int main()
 {
-    Table<Department> departmentLinkedList;
-    Student::dependantDepartmentTable=&departmentLinkedList;
-    departmentLinkedList.append( Department(1,"dept").genarateNode());
-    departmentLinkedList.append(Department(2,"dept").genarateNode());
-    departmentLinkedList.append(Department(3,"dept").genarateNode());
-    departmentLinkedList.append(Department(4,"dept").genarateNode());
+    departmentTable.append( Department(1,"dept").genarateNode());
+    departmentTable.append(Department(2,"dept").genarateNode());
+    departmentTable.append(Department(3,"dept").genarateNode());
+    departmentTable.append(Department(4,"dept").genarateNode());
 //    departmentLinkedList.display();
     cout<<"------------------------------------------"<<endl;
-    Table<Student> studentLinkedList;
-    studentLinkedList.append(Student(1,"ismail","hamda",15,8).genarateNode());
-    studentLinkedList.display();
-    studentLinkedList.append(Student(2,"ahmed","hamda",15,3).genarateNode());
-    studentLinkedList.display();
+    studentTable.append(Student(1,"ismail","hamda",15,8).genarateNode());
+    studentTable.append(Student(2,"ahmed","hamda",15,3).genarateNode());
 //    studentLinkedList.display();
-    studentLinkedList.append(Student(3,"hassan","mostafe",20,1).genarateNode());
-    studentLinkedList.display();
-//    cout<<"------------------------------------------"<<endl;
-//    studentLinkedList.deleteById(1);
-//    studentLinkedList.display();
-//    cout<<"------------------------------------------"<<endl;
-//    studentLinkedList.append(3,"hassan","mostafe",20,3,departmentLinkedList);
-//    studentLinkedList.display();
-//    cout<<"------------------------------------------"<<endl;
-//    Student ss(-1,"","hamda",-1,-1);
-//    vector<Node<Student>*> list =studentLinkedList.search(ss);
-//    cout<<list.size();
-//    for(int i=0; i<list.size(); i++)
-//        cout<<list[i]->data.toString();
+    studentTable.append(Student(3,"hassan","mostafe",20,1).genarateNode());
 
-//
-//    Table<Student> temp;
-//    studentLinkedList.saveToFile();
+    // update and insert finished validation;
+    3;hassan;mostafe;20;1
+    string sqlStatement = "update student set studentFirstName = abdelrahman where studentId = 3";
+    //string sqlStatement = "delete from department where departmentId = 5 ";
+   // string sqlStatement = " insert into student values (abdelrahman,awad,25,4";
+    //string sqlStatement = "select departmentId,  from  student where departmentId = 5";
+//    string sqlStatement="undo";
 
-    return 1;
+    cout<<sqlStatement<<endl;
+    analyseQuery(sqlStatement);
+        studentTable.display();
+
+    return 0;
+
 }
 
+void analyseQuery(string query)
+{
+    string remainingStatement;
+    std::string  token = query.substr(0, query.find(" "));
+    if(token == "select")
+    {
+        remainingStatement = query.substr(query.find(" ") + 1,query.length());
+        selectOperation(remainingStatement);
+    }
+    else if (token =="delete")
+    {
+        remainingStatement = query.substr(query.find(" ") + 1,query.length());
+        deleteOperation(remainingStatement);
+    }
 
+    else if (token == "update")
+    {
+        remainingStatement = query.substr(query.find(" ") + 1,query.length());
+        updateOpertaion(remainingStatement);
 
-
+    }
+    else if (token =="insert")
+    {
+        remainingStatement = query.substr(query.find(" ") + 1,query.length());
+        insertOperation(remainingStatement);
+    }
+    else if (token=="undo")
+        cout<<"i want to undo ya ismail beeh " ;
+    else
+        cout<<"query out of scope "<<endl ;
+}
 
