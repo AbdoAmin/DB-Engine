@@ -22,12 +22,17 @@ void analyseQuery(string query) ;
 
 
 const string INVALID_QUERY="query out of scope \n " ;
-using namespace std;
 
 struct Condition
 {
     string name;
     string value;
+    Condition(string _name,string _value)
+    {
+        name=_name;
+        value=_value;
+    }
+    Condition(){}
 };
 
 template <class T>
@@ -219,7 +224,7 @@ public:
         delete temp;
     }
 
-    void append(Node<L>* temp)
+    bool append(Node<L>* temp)
     {
         if(temp!=NULL)
         {
@@ -237,7 +242,10 @@ public:
                 tail -> next = temp;
                 tail = temp;
             }
+            return true;
         }
+        else
+            return false;
     }
 
     void display ()
@@ -260,11 +268,8 @@ public:
     {
         stringstream sstm;
         sstm << departmentId;
-        Condition paramter;
-        paramter.name="departmentId";
-        paramter.value=sstm.str();
         vector<Condition> temp;
-        temp.push_back(paramter);
+        temp.push_back(Condition("departmentId",sstm.str()));
         if(departmentLinkedList->search(generateUpdatedClass<Department>(temp)).size() >0)
             return true;
         else
@@ -277,6 +282,25 @@ public:
     {
         T temp;
         return temp.generateUpdated(attribute);
+    }
+
+    static vector<Condition> convetStringToData(vector<string> data,string fileName)
+    {
+        vector<Condition> temp;
+        if(fileName=="student")
+        {
+            temp.push_back(Condition("studentId",data[0]));
+            temp.push_back(Condition("studentFirstName",data[1]));
+            temp.push_back(Condition("studentLastName",data[2]));
+            temp.push_back(Condition("studentAge",data[3]));
+            temp.push_back(Condition("departmentId",data[4]));
+        }
+        else if(fileName=="department")
+        {
+            temp.push_back(Condition("departmentId",data[0]));
+            temp.push_back(Condition("departmentName",data[1]));
+        }
+        return temp;
     }
 
 };
@@ -414,6 +438,7 @@ public:
         studentLastName=newStudent.studentLastName !="" ? newStudent.studentLastName:studentLastName;
     }
 
+
     string toString()
     {
         stringstream sstm;
@@ -427,13 +452,12 @@ public:
 string Student::fileName="student.txt";
 Table<Department>* Student::dependantDepartmentTable;
 
-
-
 class OurSQL
 {
 public:
+
     template <class L,class N,class C>
-    static bool updateQuery(L & tableAsLinkedList,vector<Condition> conditions,vector<Condition> setOfValues)
+    static bool updateQuery(L  tableAsLinkedList,vector<Condition> conditions,vector<Condition> setOfValues)
     {
         C condition=Utilities::generateUpdatedClass<C>(conditions);
         vector<N*> searched=tableAsLinkedList.search(condition);
@@ -468,11 +492,18 @@ public:
         else
             return false;
     }
-    template <class L,class C>
-    static void insertQuery(L& tableAsLinkedList,vector<Condition> data)
+    template <class L,class N,class C>
+    static bool insertQuery(L & tableAsLinkedList,vector<Condition> data)
     {
-        C comperable=Utilities::generateUpdatedClass<C>(data);
-        tableAsLinkedList.append(comperable);
+        vector<Condition> id;
+        id.push_back(data[0]);
+        C uniqueID=Utilities::generateUpdatedClass<C>(id);
+        vector<N*> searched=tableAsLinkedList.search(uniqueID);
+        if(searched.size()==0)
+        {C comperable=Utilities::generateUpdatedClass<C>(data);
+        return tableAsLinkedList.append(comperable.genarateNode());
+        }else
+        return false;
     }
 
 
@@ -511,7 +542,6 @@ istream &operator >> (istream &is,Department &t)
 }
 
 Table<Student> studentTable;
-
 
 
 bool isValidColumns(vector<Condition> column,string fileName);
@@ -670,11 +700,20 @@ void deleteOperation(string queryStatment)
         {
             vector<Condition> conditons=splitCondition(removeSpaces(conditionStatment));
             if(isValidColumns(conditons,fileName))
-                cout<<"query  valid "<<endl;
-            else
-            {
-                cout<<INVALID_QUERY;
-            }
+                if(fileName == "student")
+                {
+                    if(OurSQL::deleteQuery<Table<Student>,Node<Student>,Student>(studentTable,conditons))
+                    {
+                        //TODO  doUpdate();
+                    }
+                }
+                else if(fileName == "department")
+                {
+                }
+                else
+                {
+                    cout<<INVALID_QUERY;
+                }
 
         }
         else
@@ -703,14 +742,20 @@ void updateOpertaion(string queryStatment)
             vector<Condition> condition=splitCondition(removeSpaces(conditions));
             if (isValidColumns(columnsAndValuesToUpdate,fileName))
             {
-              if(fileName=="student")
-              {
-                  OurSQL::updateQuery(studentTable,condition,columnsAndValuesToUpdate)
-              }
-              else if (fileName=="department")
-              {
+                cout<<endl<< "check if column is valid "<<endl;
+                if(fileName == "student")
+                {
+                    if(OurSQL::updateQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columnsAndValuesToUpdate))
+                    {
+                        //TODO  doUpdate();
+                    }
 
-              }
+                }
+                else if (fileName=="department")
+                {
+
+                }
+                cout<<"va s";
             }
             else
             {
@@ -718,7 +763,7 @@ void updateOpertaion(string queryStatment)
 
             }
 
-
+            cout<<"where s";
         }
         // no condition and will update all
         // specific case need to handle it
@@ -761,10 +806,13 @@ void insertOperation(string insertQuery)
         {
             attribute=insertQuery.substr(insertQuery.find("(")+1, insertQuery.find(")")-8);
             vector<string> valuesToInsert=splitColumn(attribute);
-
+            vector<Condition> data =Utilities::convetStringToData(valuesToInsert,fileName);
             if(fileName=="student" && valuesToInsert.size()==5)
             {
-                //OurSQL::insertQuery(studentTable,valuesToInsert);
+                if(OurSQL::insertQuery<Table<Student>,Node<Student>,Student>(studentTable,data))
+                {
+                    //TODO  doUpdate();
+                }
             }
             else if (fileName=="department" && valuesToInsert.size()==2)
             {
@@ -773,7 +821,7 @@ void insertOperation(string insertQuery)
 
 
 
-            }
+        }
         //attribute=insertQuery.substr(insertQuery.find(into)+4,insertQuery.length())
     }
     else
@@ -893,16 +941,17 @@ int main()
     studentTable.append(Student(3,"hassan","mostafe",20,1).genarateNode());
 
     // update and insert finished validation;
-    3;hassan;mostafe;20;1
-    string sqlStatement = "update student set studentFirstName = abdelrahman where studentId = 3";
-    //string sqlStatement = "delete from department where departmentId = 5 ";
-   // string sqlStatement = " insert into student values (abdelrahman,awad,25,4";
+    //string sqlStatement = "update student set student FirstName = abdelrahman where studentId = 3";
+    //string sqlStatement = "delete from student where departmentId = 1 ";
+    string sqlStatement = "insert into student values (1,abdelrahman,awad,25,1";
+    string sqlS = "insert into student values (9,abdo,amin,25,1";
     //string sqlStatement = "select departmentId,  from  student where departmentId = 5";
 //    string sqlStatement="undo";
 
     cout<<sqlStatement<<endl;
     analyseQuery(sqlStatement);
-        studentTable.display();
+    analyseQuery(sqlS);
+    studentTable.display();
 
     return 0;
 
@@ -912,6 +961,7 @@ void analyseQuery(string query)
 {
     string remainingStatement;
     std::string  token = query.substr(0, query.find(" "));
+
     if(token == "select")
     {
         remainingStatement = query.substr(query.find(" ") + 1,query.length());
