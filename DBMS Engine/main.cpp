@@ -32,7 +32,7 @@ struct Condition
         name=_name;
         value=_value;
     }
-    Condition(){}
+    Condition() {}
 };
 
 template <class T>
@@ -80,6 +80,26 @@ public:
     string getDepartmentName()
     {
         return departmentName;
+    }
+    void displayNode(vector<string> column,vector<Node<Department>* > nodes)
+    {
+        for(int i=0; i<column.size(); i++)
+        {
+            cout<<"\t"<<column[i]<<"\t";
+        }
+        for(int i=0; i<nodes.size(); i++)
+        {
+            for(int j=0; j<column.size(); j++)
+            {
+                if(column[j]=="departmentId")
+                    cout<<"\t"<<nodes[i]->data.departmentId<<"\t";
+                else if(column[j]=="departmentName")
+                    cout<<"\t"<<nodes[i]->data.departmentName<<"\t"<<endl;
+            }
+
+        }
+
+
     }
 
 
@@ -277,12 +297,15 @@ public:
 
     }
 
+
     template <class T>
     static T generateUpdatedClass(vector<Condition> attribute)
     {
         T temp;
         return temp.generateUpdated(attribute);
     }
+
+
 
     static vector<Condition> convetStringToData(vector<string> data,string fileName)
     {
@@ -357,6 +380,36 @@ public:
     {
         return studentFirstName;
     }
+
+
+    void displayNode(vector<string> column,vector<Node<Student>* > nodes)
+    {
+        for(int i=0; i<column.size(); i++)
+        {
+            cout<<"\t"<<column[i]<<"\t";
+        }
+        cout<<endl;
+        for(int i=0; i<nodes.size(); i++)
+        {
+            for(int j=0; j<column.size(); j++)
+            {
+                if(column[j]=="studentId")
+                    cout<<"\t"<<nodes[i]->data.studentId<<"\t";
+                else if(column[j]=="studentFirstName")
+                    cout<<"\t"<<nodes[i]->data.studentFirstName<<"\t";
+                else if(column[j]=="studentLastName")
+                    cout<<"\t"<<nodes[i]->data.studentLastName<<"\t";
+                else if(column[j]=="studentAge")
+                    cout<<"\t"<<nodes[i]->data.studentAge<<"\t";
+                else if(column[j]=="departmentId")
+                    cout<<"\t"<<nodes[i]->data.departmentId<<"\t"<<endl;
+            }
+            cout<<endl;
+        }
+
+    }
+
+
 
     void setStudentLastName (string lastName)
     {
@@ -500,11 +553,30 @@ public:
         C uniqueID=Utilities::generateUpdatedClass<C>(id);
         vector<N*> searched=tableAsLinkedList.search(uniqueID);
         if(searched.size()==0)
-        {C comperable=Utilities::generateUpdatedClass<C>(data);
-        return tableAsLinkedList.append(comperable.genarateNode());
-        }else
-        return false;
+        {
+            C comperable=Utilities::generateUpdatedClass<C>(data);
+            return tableAsLinkedList.append(comperable.genarateNode());
+        }
+        else
+            return false;
     }
+
+    template <class L,class N,class C>
+    static bool selectQuery(L  tableAsLinkedList,vector<Condition> conditions,vector<string> columns)
+    {
+        C condition=Utilities::generateUpdatedClass<C>(conditions);
+        vector<N*> searched=tableAsLinkedList.search(condition);
+        if(searched.size()>0)
+        {
+            condition.displayNode(columns,searched);
+            return true;
+        }
+        else
+            return false;
+    }
+
+
+
 
 
 };
@@ -551,13 +623,14 @@ string removeSpaces(string spaceToRemove)
     int found= -1;
     do
     {
-        found = spaceToRemove.find(" ",found+1);
+        found = spaceToRemove.find(" ");
         if (found!=-1)
         {
-            spaceToRemove=spaceToRemove.substr(0,found) + spaceToRemove.substr(found+1);
+            spaceToRemove=spaceToRemove.substr(0,found) + spaceToRemove.substr(found+1,spaceToRemove.length());
         }
     }
     while(found!=-1);
+
     return spaceToRemove;
 }
 vector<string> splitColumn(string columns)
@@ -647,20 +720,27 @@ void selectOperation(string queryStatment)
     }
     else
     {
-        cout<<fileName<<"fileName"<<endl;
 
         fileName = removeSpaces(queryStatment) ;
         columns=splitColumn(removeSpaces(columnStatment));
         condition=splitCondition(removeSpaces(conditionStatment)) ;
     }
 
-    cout<<fileName<<"fileName"<<endl;
     if(isFileCreated(fileName))
     {
+        for (int i =0 ; i<columns.size(); i++)
+        {
+        }
+
 
         if(isValidColumns(columns,fileName)&&isValidColumns(condition,fileName))
         {
-            cout<<"valid query " <<endl;
+            if(fileName=="student")
+                OurSQL::selectQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columns);
+
+            else if (fileName=="department")
+                OurSQL::selectQuery<Table<Department>,Node<Department>,Department>(departmentTable,condition,columns);
+
         }
         else
         {
@@ -691,11 +771,9 @@ void deleteOperation(string queryStatment)
     string conditionStatment,fileName;
     if(queryStatment.find("from")!=-1 && queryStatment.find("where")!=-1)
     {
-        cout<<endl<<queryStatment<<endl;
         fileName = removeSpaces(queryStatment.substr(queryStatment.find("from")+4,queryStatment.find("where")-5));
         queryStatment = removeSpaces(queryStatment.substr(queryStatment.find("from")+4,queryStatment.length())) ;
         conditionStatment = queryStatment.substr(queryStatment.find("where")+5,queryStatment.length());
-        cout <<endl<<fileName <<"file name "<<endl;
         if(isFileCreated(removeSpaces(fileName)))
         {
             vector<Condition> conditons=splitCondition(removeSpaces(conditionStatment));
@@ -755,7 +833,6 @@ void updateOpertaion(string queryStatment)
                 {
 
                 }
-                cout<<"va s";
             }
             else
             {
@@ -763,7 +840,6 @@ void updateOpertaion(string queryStatment)
 
             }
 
-            cout<<"where s";
         }
         // no condition and will update all
         // specific case need to handle it
@@ -777,7 +853,6 @@ void updateOpertaion(string queryStatment)
                 cout<<columnsAndValuesToUpdate[i].name<<endl;
                 cout<<columnsAndValuesToUpdate[i].value<<endl;
             }
-            cout<<"update with no condition";
         }
     }
     else
@@ -800,7 +875,6 @@ void insertOperation(string insertQuery)
     if(insertQuery.find("into")!=-1 && insertQuery.find("values")!=-1&&insertQuery.find("(")!=-1)
     {
         fileName = insertQuery.substr(insertQuery.find("into")+4, insertQuery.find("values")-4);
-        cout<<fileName<<endl;
         insertQuery=removeSpaces(insertQuery);
         if(isFileCreated(fileName))
         {
@@ -841,47 +915,41 @@ bool isValidColumns(vector<string> column,string fileName)
     studentColumns.push_back("departmentId");
     departmentColumns.push_back("departmentId");
     departmentColumns.push_back("departmentName");
-    cout <<fileName;
     if (fileName == "student")
     {
 
         for(int i=0; i<column.size(); i++)
         {
-            cout<<endl <<column[i] <<"is equal ";
-            cout <<studentColumns[0] <<endl;
             if(column[i] == studentColumns[0]||column[i] == studentColumns[1]
                     || column[i] == studentColumns[2]||column[i] == studentColumns[3]||column[i] == studentColumns[4])
             {
-                return true ;
+
             }
             else
             {
                 return false;
             }
+
         }
+        return true ;
     }
     else if (fileName=="department")
     {
         for(int i=0; i<column.size(); i++)
         {
-            for(int j=0; j<column.size(); j++)
-            {
                 if(column[i]== departmentColumns[0] || column[i]==departmentColumns[1])
                 {
-                    cout<<column[i] <<endl;
-                    cout<< departmentColumns[0]<<endl;
-                    cout<<departmentColumns[1]<<endl;
 
-                    return true ;
+
                 }
                 else
                 {
-                    cout<<column[i] << departmentColumns[0]<<endl;
-                    cout<<departmentColumns[1]<<endl;
+
                     return false;
                 }
-            }
+
         }
+         return true ;
     }
 
 }
@@ -943,14 +1011,14 @@ int main()
     // update and insert finished validation;
     //string sqlStatement = "update student set student FirstName = abdelrahman where studentId = 3";
     //string sqlStatement = "delete from student where departmentId = 1 ";
-    string sqlStatement = "insert into student values (1,abdelrahman,awad,25,1";
-    string sqlS = "insert into student values (9,abdo,amin,25,1";
-    //string sqlStatement = "select departmentId,  from  student where departmentId = 5";
+    // string sqlStatement = "insert into student values (1,abdelrahman,awad,25,1";
+    // string sqlS = "insert into student values (9,abdo,amin,25,1";
+    string sqlStatement = "select studentId ,    studentFirstName    from    student   where studentId = 3";
 //    string sqlStatement="undo";
 
     cout<<sqlStatement<<endl;
     analyseQuery(sqlStatement);
-    analyseQuery(sqlS);
+//    analyseQuery(sqlS);
     studentTable.display();
 
     return 0;
