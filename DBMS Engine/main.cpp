@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <stack>
 using namespace std;
 
 void selectOperation(string queryStatment) ;
@@ -157,13 +158,15 @@ string Department::fileName="department.txt";
 
 template <class L>
 class Table;
-
+class Student;
 
 template <class L>
 class Table
 {
     Node<L>* head;
     Node<L>* tail;
+    int count;
+    int length;
 public:
     Table()
     {
@@ -198,6 +201,155 @@ public:
         outfile.close();
     }
 
+    int getIndexOf(Node<L>* node)
+    {
+        int counter = 0;
+        Node<L>* temp= head;
+        while(temp !=NULL)
+        {
+            if ( node == temp)
+            {
+                return counter;
+            }
+            temp =  temp -> next;
+            counter++;
+        }
+
+        return -1;
+
+    }
+    /* ******* */
+    void insertIntoPosition(Node<L>* node,int index)
+    {
+        /*    Node<L>* temp= head;
+            for (int i = 1 ; i < index ; i++){
+                 temp =  temp -> next;
+            }
+            */
+
+        if (index < -1 || index > length)
+        {
+            cout << "Your List max index is : " << length - 1 << " and you can not do this step\n";
+        }
+        else if ((head == NULL && length == 0)||index==0)
+            insertFirst(node);
+        else if (index == length)
+            append(node);
+        else if (index <= length / 2)
+        {
+            Node<L>* temp = head;
+            for (int i = 1 ; i < index ; i++)
+            {
+                temp =  temp -> next;
+            }
+            node->next = temp->next;
+            node->prev = temp;
+            temp->next = node;
+            length++;
+        }
+        else
+        {
+            int count  = length - 1;
+            Node<L>* temp = tail;
+            while (index + 1 < count)
+            {
+                temp = temp->prev;
+                count--;
+            }
+            node ->prev = temp->prev;
+            node ->next = temp;
+            temp ->prev = node;
+            length++;
+        }
+
+    }
+
+//
+    /* ******* */
+    void deleteFromPosition(int index)
+    {
+        if (index <= -1 || index >= length)
+        {
+            cout << "Your List max index is : " << length - 1 << " and you can not do this step\n";
+        }
+        else if (index == 0)
+        {
+            Node<L>* temp = head;
+            /* Node *a;
+             a = head;*/
+
+            head = temp->next;
+            if (length == 1)
+                tail = NULL;
+            else
+                temp->next->prev = NULL;
+            delete temp;
+            length--;
+        }
+        else if (index == length - 1)
+        {
+            Node<L>* temp = tail;
+            /* Node *a;
+             a = tail;
+             */
+
+            tail = temp->prev;
+            temp->prev->next = NULL;
+            delete temp;
+            length--;
+        }
+        else if (index<length / 2)
+        {
+            Node<L>* b;
+            Node<L>* temp = head;
+            /*    Node *a, *b;
+                a = head;
+            */
+            for(int i=0; i<index; i++)
+            {
+                temp = temp->next;
+            }
+            b = temp;
+            temp = temp->next;
+            b->next = temp->next;
+            temp->next->prev = b;
+            delete temp;
+            length--;
+        }
+        else
+        {
+            count = length - 1;
+            Node<L>* b;
+            Node<L>* temp = tail;
+            /* Node *a, *b;
+             temp = tail;
+              */
+            while (index + 1 < count)
+            {
+                temp = temp->prev;
+                count--;
+            }
+            b = temp;
+            temp = temp->prev;
+            b->prev = temp->prev;
+            temp->prev->next = b;
+            delete temp;
+            length--;
+        }
+    }
+
+    /* ******* */
+    void insertFirst(Node<L>* temp)
+    {
+        temp->next = head;
+        temp->prev = NULL;
+        if(head!=NULL)
+            head->prev = temp;
+        head = temp;
+        if (tail == NULL)
+            tail = temp;
+        length++;
+    }
 
     vector<Node<L>*> search(L requierdNode)
     {
@@ -277,9 +429,129 @@ public:
 
 };
 
+template <class T >
+class StackNode
+{
+public:
+    string operation;
+    vector<int> index;
+    Table<T> *table;
+    vector<Node<T> *> node;
+};
+
+template <class L>
+class UndoStack
+{
+public:
+    stack<StackNode<L> > S1;
+    void undo()
+    {
+        StackNode<L> stackNode =  S1.top();
+        S1.pop();
+        if(stackNode.operation == "update")
+        {
+            undoUpdate(stackNode);
+        }
+        else if(stackNode.operation == "insert")
+        {
+            undoInsert(stackNode); // make delete inside table
+        }
+
+        else if (stackNode.operation == "delete")
+        {
+            undoDelete(stackNode); // make insert inside table
+        }
+    }
+
+    void undoUpdate(StackNode<L> stackNode) // make update inside table with previous values
+    {
+        for(int i = 0 ; i < stackNode.index.size(); i++)
+        {
+            stackNode.table ->deleteFromPosition(stackNode.index[i]);
+            stackNode.table ->insertIntoPosition(stackNode.node[i],stackNode.index[i]);
+        }
+        /*
+                vector<int> updatedNodeIndex = stackNode.table ->getIndexOf(stackNode);
+                for(int i =0 ; i < updatedNodeIndex.size();i++){
+                    stackNode.table->append()
+                }
+                */
+    }
+
+    void undoInsert(StackNode<L> stackNode) // make delete inside table
+    {
+        for(int i = 0 ; i < stackNode.index.size(); i++)
+        {
+            stackNode.table ->deleteFromPosition(stackNode.index[i]);
+        }
+        /*
+        vector<int> updatedNodeIndex = stackNode.table ->getIndexOf(stackNode);
+        for(int i =0 ; i < updatedNodeIndex.size();i++){
+            stackNode.table->deleteFromPosition(updatedNodeIndex[i]);
+        }
+
+        */
+
+    }
+
+    void undoDelete(StackNode<L> stackNode) // make insert inside table
+    {
+
+        for(int i = 0 ; i < stackNode.index.size(); i++)
+        {
+            stackNode.table ->insertIntoPosition(stackNode.node[i],stackNode.index[i]);
+        }
+
+        /*    vector<int> updatedNodeIndex = stackNode.table ->getIndexOf(stackNode);
+         for(int i =0 ; i < updatedNodeIndex.size();i++){
+             stackNode.table->insertIntoPosition(stackNode.node,updatedNodeIndex);
+         }
+         */
+    }
+
+
+    void doUpdate( vector<int> index,Table<L> *table,vector<Node<L>* > node)
+    {
+        StackNode<L> stackNode;
+        stackNode.operation = "update";
+        stackNode.node(node);
+        stackNode.table = table;
+        stackNode.index = index;
+        S1.push(stackNode);
+
+    }
+
+    void doDelete(vector<int> index,Table<L>* table,vector<Node<L>* > node)
+    {
+        StackNode<L> stackNode;
+        stackNode.operation = "delete";
+        stackNode.node=node;
+        stackNode.table = table;
+        stackNode.index = index;
+        S1.push(stackNode);
+    }
+
+    void doInsert(vector<int> index,Table<L>* table,vector<Node<L>* > node)
+    {
+        StackNode<L> stackNode;
+        stackNode.operation = "insert";
+        stackNode.node = node;
+        stackNode.table = table;
+        stackNode.index = index;
+        S1.push(stackNode);
+    }
+
+};
+
+
+UndoStack<Student> undoStudentStack;
+UndoStack<Department> undoDepartmentStack;
+
 class Utilities
 {
 public:
+    static vector<string> undoTypeName;
+
     static bool checkValidationDepartment( Table<Department>* departmentLinkedList,int departmentId)
     {
         stringstream sstm;
@@ -299,6 +571,15 @@ public:
     {
         T temp;
         return temp.generateUpdated(attribute);
+    }
+
+    static bool undo(string table)
+    {
+        if(table=="student")
+             undoStudentStack.undo();
+        else if(table=="department")
+             undoDepartmentStack.undo();
+        return true;
     }
 
 
@@ -323,6 +604,7 @@ public:
     }
 
 };
+vector<string> Utilities::undoTypeName;
 Table<Department> departmentTable;
 
 
@@ -501,45 +783,46 @@ public:
 string Student::fileName="student.txt";
 Table<Department>* Student::dependantDepartmentTable;
 
+
+
 class OurSQL
 {
 public:
 
     template <class L,class N,class C>
-    static bool updateQuery(L  tableAsLinkedList,vector<Condition> conditions,vector<Condition> setOfValues)
+    static vector<N*> updateQuery(L  tableAsLinkedList,vector<Condition> conditions,vector<Condition> setOfValues)
     {
         C condition=Utilities::generateUpdatedClass<C>(conditions);
         vector<N*> searched=tableAsLinkedList.search(condition);
+        vector<N*> beforeResult;
         if(searched.size()>0)
         {
             C comperable=Utilities::generateUpdatedClass<C>(setOfValues);
             for(int i=0; i<searched.size(); i++)
             {
+                beforeResult.push_back(searched[i]->data.genarateNode());
                 searched[i]->data.swap(comperable); //ToDo Change Node To be generic
             }
-
-            return true;
         }
-        else
-            return false;
+        return beforeResult;
     }
 
 
     template <class L,class N,class C>
-    static bool deleteQuery(L& tableAsLinkedList,vector<Condition> conditions)
+    static vector<N*> deleteQuery(L& tableAsLinkedList,vector<Condition> conditions)
     {
         C condition=Utilities::generateUpdatedClass<C>(conditions);
         vector<N*> searched=tableAsLinkedList.search(condition);
+        vector<N*> beforeResult;
         if(searched.size() > 0)
         {
             for(int i= 0 ; i< searched.size() ; i++)
             {
+                beforeResult.push_back(searched[i]->data.genarateNode());
                 tableAsLinkedList.deleteMethod(searched[i]);
             }
-            return true;
         }
-        else
-            return false;
+        return beforeResult;
     }
     template <class L,class N,class C>
     static bool insertQuery(L & tableAsLinkedList,vector<Condition> data)
@@ -704,6 +987,7 @@ void selectOperation(string queryStatment)
         queryStatment = queryStatment.substr(queryStatment.find("where")+5,queryStatment.length()) ;
         conditionStatment = queryStatment.substr(0,queryStatment.length());
         columns=splitColumn(removeSpaces(columnStatment));
+
         condition=splitCondition(removeSpaces(conditionStatment));
 
     }
@@ -712,7 +996,7 @@ void selectOperation(string queryStatment)
 
         fileName = removeSpaces(queryStatment) ;
         columns=splitColumn(removeSpaces(columnStatment));
-        condition=splitCondition(removeSpaces(conditionStatment)) ;
+        // condition=splitCondition(removeSpaces(conditionStatment)) ;
     }
 
     if(isFileCreated(fileName))
@@ -720,26 +1004,35 @@ void selectOperation(string queryStatment)
         if(isValidColumns(columns,fileName)&&isValidColumns(condition,fileName))
         {
             if(fileName=="student")
+            {
+
+
+                if (columns[0]=="*")
+                {
+                    columns.push_back("studentId");
+                    columns.push_back("studentFirstName");
+                    columns.push_back("studentLastName");
+                    columns.push_back("studentAge");
+                    columns.push_back("departmentId");
+                }
+
                 OurSQL::selectQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columns);
-
+            }
             else if (fileName=="department")
-                OurSQL::selectQuery<Table<Department>,Node<Department>,Department>(departmentTable,condition,columns);
+            {
+                if (columns[0]=="*")
+                {
+                    columns.push_back("departmentId");
+                    columns.push_back("departmentName");
 
+                }
+                OurSQL::selectQuery<Table<Department>,Node<Department>,Department>(departmentTable,condition,columns);
+            }
         }
         else
         {
             cout<<INVALID_QUERY<<endl;
         }
-//        for(int i=0; i<c.size(); i++)
-//        {
-//            cout<<" condition name "<<c[i].name ;
-//            cout<<" condition value "<<c[i].value<<endl;
-//        }
-//        for(int i=0; i<l.size(); i++)
-//        {
-//            cout<<" coulmn  "<<l[i]<<endl;
-//        }
-//        cout<<fileName<<" = file name ";
     }
     else
     {
@@ -764,13 +1057,25 @@ void deleteOperation(string queryStatment)
             if(isValidColumns(conditons,fileName))
                 if(fileName == "student")
                 {
-                    if(OurSQL::deleteQuery<Table<Student>,Node<Student>,Student>(studentTable,conditons))
+                    vector<Node<Student>*> beforeUpdate=OurSQL::deleteQuery<Table<Student>,Node<Student>,Student>(studentTable,conditons);
+                    vector<int> index;
+                    for(int i=0; i<beforeUpdate.size(); i++)
                     {
-                        //TODO  doUpdate();
+                        index.push_back(studentTable.getIndexOf(beforeUpdate[i]));
                     }
+                    undoStudentStack.doDelete(index,&studentTable,beforeUpdate);
+                    Utilities::undoTypeName.push_back("student");
                 }
                 else if(fileName == "department")
                 {
+                    vector<Node<Department>*> beforeUpdate=OurSQL::deleteQuery<Table<Department>,Node<Department>,Department>(departmentTable,conditons);
+                    vector<int> index;
+                    for(int i=0; i<beforeUpdate.size(); i++)
+                    {
+                        index.push_back(departmentTable.getIndexOf(beforeUpdate[i]));
+                    }
+                    undoDepartmentStack.doDelete(index,&departmentTable,beforeUpdate);
+                    Utilities::undoTypeName.push_back("department");
                 }
                 else
                 {
@@ -807,10 +1112,10 @@ void updateOpertaion(string queryStatment)
                 cout<<endl<< "check if column is valid "<<endl;
                 if(fileName == "student")
                 {
-                    if(OurSQL::updateQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columnsAndValuesToUpdate))
-                    {
-                        //TODO  doUpdate();
-                    }
+//                    if(OurSQL::updateQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columnsAndValuesToUpdate))
+//                    {
+//                        //TODO  doUpdate();
+//                    }
 
                 }
                 else if (fileName=="department")
@@ -825,8 +1130,7 @@ void updateOpertaion(string queryStatment)
             }
 
         }
-        // no condition and will update all
-        // specific case need to handle it
+
         else
         {
             columnsToUpdate = queryStatment ;
@@ -876,11 +1180,7 @@ void insertOperation(string insertQuery)
             {
 
             }
-
-
-
         }
-        //attribute=insertQuery.substr(insertQuery.find(into)+4,insertQuery.length())
     }
     else
     {
@@ -892,25 +1192,27 @@ bool isValidColumns(vector<string> column,string fileName)
 {
     vector<string> studentColumns ;
     vector<string> departmentColumns ;
+    studentColumns.push_back("*");
     studentColumns.push_back("studentId");
     studentColumns.push_back("studentFirstName");
     studentColumns.push_back("studentLastName");
     studentColumns.push_back("studentAge");
     studentColumns.push_back("departmentId");
-    studentColumns.push_back("*");
+
     departmentColumns.push_back("departmentId");
     departmentColumns.push_back("departmentName");
     departmentColumns.push_back("*");
     if (fileName == "student")
     {
-        if (studentColumns[0]=="*"&&studentColumns.size()==0)
+        cout <<"colimn [0]"<<column[0]<<"&" ;
+        if (studentColumns[0]=="*")
             return  true;
 
         for(int i=0; i<column.size(); i++)
         {
 
             if(column[i] == studentColumns[0]||column[i] == studentColumns[1]
-                    || column[i] == studentColumns[2]||column[i] == studentColumns[3]||column[i] == studentColumns[4])
+                    || column[i] == studentColumns[2]||column[i] == studentColumns[3]||column[i]== studentColumns[4]||column[i] == studentColumns[5])
             {
             }
             else
@@ -923,11 +1225,12 @@ bool isValidColumns(vector<string> column,string fileName)
     }
     else if (fileName=="department")
     {
+        cout <<"colimn [0] "<<column[0]<<"&";
         if (departmentColumns[0]=="*"&&departmentColumns.size()==0)
             return  true;
         for(int i=0; i<column.size(); i++)
         {
-            if(column[i]== departmentColumns[0] || column[i]==departmentColumns[1])
+            if(column[i]== departmentColumns[0] || column[i]==departmentColumns[1]||column[i] == studentColumns[2])
             {
 
 
@@ -955,9 +1258,11 @@ bool isValidColumns(vector<Condition> column,string fileName)
     departmentColumns.push_back("departmentId");
     departmentColumns.push_back("departmentName");
     if (fileName=="student")
+
     {
         for(int i=0; i<column.size(); i++)
         {
+            cout <<"$"<<column[i].name<<"$";
             if(column[i].name == studentColumns[0]||column[i].name == studentColumns[1] || column[i].name == studentColumns[2]
                     ||column[i].name == studentColumns[3]||column[i].name == studentColumns[4])
             {
@@ -968,11 +1273,13 @@ bool isValidColumns(vector<Condition> column,string fileName)
                 return false;
             }
         }
+        return true ;
     }
     else if (fileName=="department")
     {
         for(int i=0; i<column.size(); i++)
         {
+
             if(column[i].name== departmentColumns[0] || column[i].name==departmentColumns[1])
             {
                 return true;
@@ -983,6 +1290,7 @@ bool isValidColumns(vector<Condition> column,string fileName)
 
             }
         }
+        return true ;
     }
 }
 int main()
@@ -991,6 +1299,7 @@ int main()
     departmentTable.append(Department(2,"dept").genarateNode());
     departmentTable.append(Department(3,"dept").genarateNode());
     departmentTable.append(Department(4,"dept").genarateNode());
+
 //    departmentLinkedList.display();
     cout<<"------------------------------------------"<<endl;
     studentTable.append(Student(1,"ismail","hamda",15,8).genarateNode());
@@ -1006,19 +1315,22 @@ int main()
         cout<<(temp[i]->data.toString())<< "   *^%    ";
     }
 
+
     // update and insert finished validation;
     //string sqlStatement = "update student set student FirstName = abdelrahman where studentId = 3";
-    //string sqlStatement = "delete from student where departmentId = 1 ";
+    string sqlStatement = "delete from student where departmentId = 1 ";
     // string sqlStatement = "insert into student values (1,abdelrahman,awad,25,1";
     // string sqlS = "insert into student values (9,abdo,amin,25,1";
-    string sqlStatement = "select * from student  ";
+//    string sqlStatement = "select * from student  ";
 //    string sqlStatement="undo";
 
-//    cout<<sqlStatement<<endl;
-//    analyseQuery(sqlStatement);
-////    analyseQuery(sqlS);
-//    studentTable.display();
-
+    cout<<sqlStatement<<endl;
+    analyseQuery(sqlStatement);
+//    analyseQuery(sqlS);
+    studentTable.display();
+    Utilities::undo(Utilities::undoTypeName.back());
+    Utilities::undoTypeName.pop_back();
+     studentTable.display();
     return 0;
 
 }
