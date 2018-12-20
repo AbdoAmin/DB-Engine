@@ -1,7 +1,6 @@
 /*
  * C Program to List All Lines containing a given String
  */
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
@@ -101,9 +100,6 @@ public:
 
 
     }
-
-
-
 
 //just generate temp carry updated value
     Department generateUpdated(vector<Condition> attribute)
@@ -574,14 +570,7 @@ public:
         else
             return false;
     }
-
-
-
-
-
 };
-
-
 istream &operator >> (istream &is,Student &t)
 {
 
@@ -728,11 +717,6 @@ void selectOperation(string queryStatment)
 
     if(isFileCreated(fileName))
     {
-        for (int i =0 ; i<columns.size(); i++)
-        {
-        }
-
-
         if(isValidColumns(columns,fileName)&&isValidColumns(condition,fileName))
         {
             if(fileName=="student")
@@ -913,17 +897,21 @@ bool isValidColumns(vector<string> column,string fileName)
     studentColumns.push_back("studentLastName");
     studentColumns.push_back("studentAge");
     studentColumns.push_back("departmentId");
+    studentColumns.push_back("*");
     departmentColumns.push_back("departmentId");
     departmentColumns.push_back("departmentName");
+    departmentColumns.push_back("*");
     if (fileName == "student")
     {
+        if (studentColumns[0]=="*"&&studentColumns.size()==0)
+            return  true;
 
         for(int i=0; i<column.size(); i++)
         {
+
             if(column[i] == studentColumns[0]||column[i] == studentColumns[1]
                     || column[i] == studentColumns[2]||column[i] == studentColumns[3]||column[i] == studentColumns[4])
             {
-
             }
             else
             {
@@ -935,21 +923,23 @@ bool isValidColumns(vector<string> column,string fileName)
     }
     else if (fileName=="department")
     {
+        if (departmentColumns[0]=="*"&&departmentColumns.size()==0)
+            return  true;
         for(int i=0; i<column.size(); i++)
         {
-                if(column[i]== departmentColumns[0] || column[i]==departmentColumns[1])
-                {
+            if(column[i]== departmentColumns[0] || column[i]==departmentColumns[1])
+            {
 
 
-                }
-                else
-                {
+            }
+            else
+            {
 
-                    return false;
-                }
+                return false;
+            }
 
         }
-         return true ;
+        return true ;
     }
 
 }
@@ -1013,7 +1003,7 @@ int main()
     //string sqlStatement = "delete from student where departmentId = 1 ";
     // string sqlStatement = "insert into student values (1,abdelrahman,awad,25,1";
     // string sqlS = "insert into student values (9,abdo,amin,25,1";
-    string sqlStatement = "select studentId ,    studentFirstName    from    student   where studentId = 3";
+    string sqlStatement = "select * from student  ";
 //    string sqlStatement="undo";
 
     cout<<sqlStatement<<endl;
