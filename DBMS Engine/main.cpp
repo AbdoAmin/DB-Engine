@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <stack>
 using namespace std;
 
 void selectOperation(string queryStatment) ;
@@ -164,6 +165,8 @@ class Table
 {
     Node<L>* head;
     Node<L>* tail;
+    int count;
+    int length;
 public:
     Table()
     {
@@ -198,6 +201,158 @@ public:
         outfile.close();
     }
 
+    vector<int> getIndexOf(vector<Node<L>*> node)
+    {
+        for (int i = 0 ; i < node.size() ; i++ )
+{
+
+       int counter = 0;
+        Node<L>* temp= head;
+        while(temp !=NULL)
+        {
+            if ( node == temp)
+            {
+                counter++;
+                return counter;
+            }
+            temp =  temp -> next;
+        }
+
+        return -1;
+        }
+    }
+    /* ******* */
+    void insertIntoPosition(Node<L>* node,int index)
+    {
+        /*    Node<L>* temp= head;
+            for (int i = 1 ; i < index ; i++){
+                 temp =  temp -> next;
+            }
+            */
+
+        if (index < -1 || index > length)
+        {
+            cout << "Your List max index is : " << length - 1 << " and you can not do this step\n";
+        }
+        else if ((head == NULL && length == 0)||index==0)
+            insertFirst(node);
+        else if (index == length)
+            append(node);
+        else if (index <= length / 2)
+        {
+            Node<L>* temp = head;
+            for (int i = 1 ; i < index ; i++)
+            {
+                temp =  temp -> next;
+            }
+            node->next = temp->next;
+            node->prev = temp;
+            temp->next = node;
+            length++;
+        }
+        else
+        {
+            int count  = length - 1;
+            Node<L>* temp = tail;
+            while (index + 1 < count)
+            {
+                temp = temp->prev;
+                count--;
+            }
+            node ->prev = temp->prev;
+            node ->next = temp;
+            temp ->prev = node;
+            length++;
+        }
+
+    }
+
+//
+    /* ******* */
+    void deleteFromPosition(int index)
+    {
+        if (index <= -1 || index >= length)
+        {
+            cout << "Your List max index is : " << length - 1 << " and you can not do this step\n";
+        }
+        else if (index == 0)
+        {
+            Node<L>* temp = head;
+            /* Node *a;
+             a = head;*/
+
+            head = temp->next;
+            if (length == 1)
+                tail = NULL;
+            else
+                temp->next->prev = NULL;
+            delete temp;
+            length--;
+        }
+        else if (index == length - 1)
+        {
+            Node<L>* temp = tail;
+            /* Node *a;
+             a = tail;
+             */
+
+            tail = temp->prev;
+            temp->prev->next = NULL;
+            delete temp;
+            length--;
+        }
+        else if (index<length / 2)
+        {
+            Node<L>* b;
+            Node<L>* temp = head;
+            /*    Node *a, *b;
+                a = head;
+            */
+            for(int i=0; i<index; i++)
+            {
+                temp = temp->next;
+            }
+            b = temp;
+            temp = temp->next;
+            b->next = temp->next;
+            temp->next->prev = b;
+            delete temp;
+            length--;
+        }
+        else
+        {
+            count = length - 1;
+            Node<L>* b;
+            Node<L>* temp = tail;
+            /* Node *a, *b;
+             temp = tail;
+              */
+            while (index + 1 < count)
+            {
+                temp = temp->prev;
+                count--;
+            }
+            b = temp;
+            temp = temp->prev;
+            b->prev = temp->prev;
+            temp->prev->next = b;
+            delete temp;
+            length--;
+        }
+    }
+
+    /* ******* */
+    void insertFirst(Node<L>* temp)
+    {
+        temp->next = head;
+        temp->prev = NULL;
+        if(head!=NULL)
+            head->prev = temp;
+        head = temp;
+        if (tail == NULL)
+            tail = temp;
+        length++;
+    }
 
     vector<Node<L>*> search(L requierdNode)
     {
@@ -501,45 +656,159 @@ public:
 string Student::fileName="student.txt";
 Table<Department>* Student::dependantDepartmentTable;
 
+
+template <class T >
+class StackNode
+{
+    string operation;
+    vector<int> index;
+    Table<T> *table;
+    vector<Node<T> *> node;
+};
+
+template <class L>
+class UndoStack
+{
+    stack<StackNode<L> > s1;
+    void undo()
+    {
+        StackNode<L> stackNode =  S1.top();
+        S1.pop();
+        if(stackNode.operation = "update")
+        {
+            undoUpdate(stackNode);
+        }
+        else if(stackNode.operation = "insert")
+        {
+            undoInsert(stackNode); // make delete inside table
+        }
+
+        else if (stackNode.operation = "delete")
+        {
+            undoDelete(stackNode); // make insert inside table
+        }
+    }
+
+    void undoUpdate(StackNode<L> stackNode) // make update inside table with previous values
+    {
+        for(int i = 0 ; i < stackNode.index.size(); i++)
+        {
+            stackNode.table ->deleteFromPosition(stackNode.index[i]);
+            stackNode.table ->insertIntoPosition(stackNode.node[i],stackNode.index[i]);
+        }
+        /*
+                vector<int> updatedNodeIndex = stackNode.table ->getIndexOf(stackNode);
+                for(int i =0 ; i < updatedNodeIndex.size();i++){
+                    stackNode.table->append()
+                }
+                */
+    }
+
+    void undoInsert(StackNode<L> stackNode) // make delete inside table
+    {
+        for(int i = 0 ; i < stackNode.index.size(); i++)
+        {
+            stackNode.table ->deleteFromPosition(stackNode.index[i]);
+        }
+        /*
+        vector<int> updatedNodeIndex = stackNode.table ->getIndexOf(stackNode);
+        for(int i =0 ; i < updatedNodeIndex.size();i++){
+            stackNode.table->deleteFromPosition(updatedNodeIndex[i]);
+        }
+
+        */
+
+    }
+
+    void undoDelete(StackNode<L> stackNode) // make insert inside table
+    {
+
+        for(int i = 0 ; i < stackNode.index.size(); i++)
+        {
+            stackNode.table ->insertIntoPosition(stackNode.node[i],stackNode.index[i]);
+        }
+
+        /*    vector<int> updatedNodeIndex = stackNode.table ->getIndexOf(stackNode);
+         for(int i =0 ; i < updatedNodeIndex.size();i++){
+             stackNode.table->insertIntoPosition(stackNode.node,updatedNodeIndex);
+         }
+         */
+    }
+
+
+    void doUpdate( vector<int> index,Table<L> *table,vector<Node<L>* > node)
+    {
+        StackNode<L> stackNode;
+        stackNode.operation = "update";
+        stackNode.node(node);
+        stackNode.table = table;
+        stackNode.index = index;
+        S1.push(stackNode);
+
+    }
+
+    void doDelete(vector<int> index,Table<L>* table,vector<Node<L>* > node)
+    {
+        StackNode<L> stackNode;
+        stackNode.operation = "delete";
+        stackNode.node(node);
+        stackNode.table = table;
+        stackNode.index = index;
+        S1.push(stackNode);
+    }
+
+    void doInsert(vector<int> index,Table<L>* table,vector<Node<L>* > node)
+    {
+        StackNode<L> stackNode;
+        stackNode.operation = "insert";
+        stackNode.node = node;
+        stackNode.table = table;
+        stackNode.index = index;
+        S1.push(stackNode);
+    }
+
+};
+
+
+
 class OurSQL
 {
 public:
 
     template <class L,class N,class C>
-    static bool updateQuery(L  tableAsLinkedList,vector<Condition> conditions,vector<Condition> setOfValues)
+    static vector<N*> updateQuery(L  tableAsLinkedList,vector<Condition> conditions,vector<Condition> setOfValues)
     {
         C condition=Utilities::generateUpdatedClass<C>(conditions);
         vector<N*> searched=tableAsLinkedList.search(condition);
+        vector<N*> beforeResult;
         if(searched.size()>0)
         {
             C comperable=Utilities::generateUpdatedClass<C>(setOfValues);
             for(int i=0; i<searched.size(); i++)
             {
+                beforeResult.push_back(searched[i]->data.genarateNode());
                 searched[i]->data.swap(comperable); //ToDo Change Node To be generic
             }
-
-            return true;
         }
-        else
-            return false;
+            return beforeResult;
     }
 
 
     template <class L,class N,class C>
-    static bool deleteQuery(L& tableAsLinkedList,vector<Condition> conditions)
+    static vector<N*> deleteQuery(L& tableAsLinkedList,vector<Condition> conditions)
     {
         C condition=Utilities::generateUpdatedClass<C>(conditions);
         vector<N*> searched=tableAsLinkedList.search(condition);
+        vector<N*> beforeResult;
         if(searched.size() > 0)
         {
             for(int i= 0 ; i< searched.size() ; i++)
             {
+                beforeResult.push_back(searched[i]->data.genarateNode());
                 tableAsLinkedList.deleteMethod(searched[i]);
             }
-            return true;
         }
-        else
-            return false;
+            return beforeResult;
     }
     template <class L,class N,class C>
     static bool insertQuery(L & tableAsLinkedList,vector<Condition> data)
@@ -713,7 +982,7 @@ void selectOperation(string queryStatment)
 
         fileName = removeSpaces(queryStatment) ;
         columns=splitColumn(removeSpaces(columnStatment));
-       // condition=splitCondition(removeSpaces(conditionStatment)) ;
+        // condition=splitCondition(removeSpaces(conditionStatment)) ;
     }
 
     if(isFileCreated(fileName))
@@ -774,10 +1043,11 @@ void deleteOperation(string queryStatment)
             if(isValidColumns(conditons,fileName))
                 if(fileName == "student")
                 {
-                    if(OurSQL::deleteQuery<Table<Student>,Node<Student>,Student>(studentTable,conditons))
-                    {
-                        //TODO  doUpdate();
-                    }
+                    vector<Node<Student>*> beforeUpdate=OurSQL::deleteQuery<Table<Student>,Node<Student>,Student>(studentTable,conditons);
+//                    undoStack<Student,Student,Student>.doDelete(
+//                                       studentTable.getIndexOf(beforeUpdate),
+//                                       &studentTable,
+//                                       beforeUpdate);
                 }
                 else if(fileName == "department")
                 {
@@ -817,10 +1087,10 @@ void updateOpertaion(string queryStatment)
                 cout<<endl<< "check if column is valid "<<endl;
                 if(fileName == "student")
                 {
-                    if(OurSQL::updateQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columnsAndValuesToUpdate))
-                    {
-                        //TODO  doUpdate();
-                    }
+//                    if(OurSQL::updateQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columnsAndValuesToUpdate))
+//                    {
+//                        //TODO  doUpdate();
+//                    }
 
                 }
                 else if (fileName=="department")
@@ -978,7 +1248,7 @@ bool isValidColumns(vector<Condition> column,string fileName)
                 return false;
             }
         }
-    return true ;
+        return true ;
     }
     else if (fileName=="department")
     {
@@ -1004,12 +1274,14 @@ int main()
     departmentTable.append(Department(2,"dept").genarateNode());
     departmentTable.append(Department(3,"dept").genarateNode());
     departmentTable.append(Department(4,"dept").genarateNode());
+
 //    departmentLinkedList.display();
     cout<<"------------------------------------------"<<endl;
     studentTable.append(Student(1,"ismail","hamda",15,8).genarateNode());
     studentTable.append(Student(2,"ahmed","hamda",15,3).genarateNode());
 //    studentLinkedList.display();
     studentTable.append(Student(3,"hassan","mostafe",20,1).genarateNode());
+
 
     // update and insert finished validation;
     //string sqlStatement = "update student set student FirstName = abdelrahman where studentId = 3";
