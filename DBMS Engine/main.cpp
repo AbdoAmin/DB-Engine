@@ -704,6 +704,7 @@ void selectOperation(string queryStatment)
         queryStatment = queryStatment.substr(queryStatment.find("where")+5,queryStatment.length()) ;
         conditionStatment = queryStatment.substr(0,queryStatment.length());
         columns=splitColumn(removeSpaces(columnStatment));
+
         condition=splitCondition(removeSpaces(conditionStatment));
 
     }
@@ -712,7 +713,7 @@ void selectOperation(string queryStatment)
 
         fileName = removeSpaces(queryStatment) ;
         columns=splitColumn(removeSpaces(columnStatment));
-        condition=splitCondition(removeSpaces(conditionStatment)) ;
+       // condition=splitCondition(removeSpaces(conditionStatment)) ;
     }
 
     if(isFileCreated(fileName))
@@ -720,26 +721,35 @@ void selectOperation(string queryStatment)
         if(isValidColumns(columns,fileName)&&isValidColumns(condition,fileName))
         {
             if(fileName=="student")
+            {
+
+
+                if (columns[0]=="*")
+                {
+                    columns.push_back("studentId");
+                    columns.push_back("studentFirstName");
+                    columns.push_back("studentLastName");
+                    columns.push_back("studentAge");
+                    columns.push_back("departmentId");
+                }
+
                 OurSQL::selectQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columns);
-
+            }
             else if (fileName=="department")
-                OurSQL::selectQuery<Table<Department>,Node<Department>,Department>(departmentTable,condition,columns);
+            {
+                if (columns[0]=="*")
+                {
+                    columns.push_back("departmentId");
+                    columns.push_back("departmentName");
 
+                }
+                OurSQL::selectQuery<Table<Department>,Node<Department>,Department>(departmentTable,condition,columns);
+            }
         }
         else
         {
             cout<<INVALID_QUERY<<endl;
         }
-//        for(int i=0; i<c.size(); i++)
-//        {
-//            cout<<" condition name "<<c[i].name ;
-//            cout<<" condition value "<<c[i].value<<endl;
-//        }
-//        for(int i=0; i<l.size(); i++)
-//        {
-//            cout<<" coulmn  "<<l[i]<<endl;
-//        }
-//        cout<<fileName<<" = file name ";
     }
     else
     {
@@ -825,8 +835,7 @@ void updateOpertaion(string queryStatment)
             }
 
         }
-        // no condition and will update all
-        // specific case need to handle it
+
         else
         {
             columnsToUpdate = queryStatment ;
@@ -876,11 +885,7 @@ void insertOperation(string insertQuery)
             {
 
             }
-
-
-
         }
-        //attribute=insertQuery.substr(insertQuery.find(into)+4,insertQuery.length())
     }
     else
     {
@@ -892,25 +897,27 @@ bool isValidColumns(vector<string> column,string fileName)
 {
     vector<string> studentColumns ;
     vector<string> departmentColumns ;
+    studentColumns.push_back("*");
     studentColumns.push_back("studentId");
     studentColumns.push_back("studentFirstName");
     studentColumns.push_back("studentLastName");
     studentColumns.push_back("studentAge");
     studentColumns.push_back("departmentId");
-    studentColumns.push_back("*");
+
     departmentColumns.push_back("departmentId");
     departmentColumns.push_back("departmentName");
     departmentColumns.push_back("*");
     if (fileName == "student")
     {
-        if (studentColumns[0]=="*"&&studentColumns.size()==0)
+        cout <<"colimn [0]"<<column[0]<<"&" ;
+        if (studentColumns[0]=="*")
             return  true;
 
         for(int i=0; i<column.size(); i++)
         {
 
             if(column[i] == studentColumns[0]||column[i] == studentColumns[1]
-                    || column[i] == studentColumns[2]||column[i] == studentColumns[3]||column[i] == studentColumns[4])
+                    || column[i] == studentColumns[2]||column[i] == studentColumns[3]||column[i]== studentColumns[4]||column[i] == studentColumns[5])
             {
             }
             else
@@ -923,11 +930,12 @@ bool isValidColumns(vector<string> column,string fileName)
     }
     else if (fileName=="department")
     {
+        cout <<"colimn [0] "<<column[0]<<"&";
         if (departmentColumns[0]=="*"&&departmentColumns.size()==0)
             return  true;
         for(int i=0; i<column.size(); i++)
         {
-            if(column[i]== departmentColumns[0] || column[i]==departmentColumns[1])
+            if(column[i]== departmentColumns[0] || column[i]==departmentColumns[1]||column[i] == studentColumns[2])
             {
 
 
@@ -955,9 +963,11 @@ bool isValidColumns(vector<Condition> column,string fileName)
     departmentColumns.push_back("departmentId");
     departmentColumns.push_back("departmentName");
     if (fileName=="student")
+
     {
         for(int i=0; i<column.size(); i++)
         {
+            cout <<"$"<<column[i].name<<"$";
             if(column[i].name == studentColumns[0]||column[i].name == studentColumns[1] || column[i].name == studentColumns[2]
                     ||column[i].name == studentColumns[3]||column[i].name == studentColumns[4])
             {
@@ -968,11 +978,13 @@ bool isValidColumns(vector<Condition> column,string fileName)
                 return false;
             }
         }
+    return true ;
     }
     else if (fileName=="department")
     {
         for(int i=0; i<column.size(); i++)
         {
+
             if(column[i].name== departmentColumns[0] || column[i].name==departmentColumns[1])
             {
                 return true;
@@ -983,6 +995,7 @@ bool isValidColumns(vector<Condition> column,string fileName)
 
             }
         }
+        return true ;
     }
 }
 int main()
