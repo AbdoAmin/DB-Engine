@@ -997,6 +997,14 @@ int main()
     studentTable.append(Student(2,"ahmed","hamda",15,3).genarateNode());
 //    studentLinkedList.display();
     studentTable.append(Student(3,"hassan","mostafe",20,1).genarateNode());
+    studentTable.append(Student(9,"mostafe","mostafe",50,1).genarateNode());
+    studentTable.append(Student(7,"hamda","ismail",38,1).genarateNode());
+
+    vector<Node<Student>* > temp=studentTable.search(Student(-1,"","",-1,-1));
+    for(int i=0; i<temp.size(); i++)
+    {
+        cout<<(temp[i]->data.toString())<< "   *^%    ";
+    }
 
     // update and insert finished validation;
     //string sqlStatement = "update student set student FirstName = abdelrahman where studentId = 3";
@@ -1006,10 +1014,10 @@ int main()
     string sqlStatement = "select * from student  ";
 //    string sqlStatement="undo";
 
-    cout<<sqlStatement<<endl;
-    analyseQuery(sqlStatement);
-//    analyseQuery(sqlS);
-    studentTable.display();
+//    cout<<sqlStatement<<endl;
+//    analyseQuery(sqlStatement);
+////    analyseQuery(sqlS);
+//    studentTable.display();
 
     return 0;
 
