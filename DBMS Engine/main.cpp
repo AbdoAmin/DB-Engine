@@ -98,18 +98,21 @@ public:
     {
         for(int i=0; i<column.size(); i++)
         {
-            cout<<"\t"<<column[i]<<"\t";
+            cout<<column[i]<<"\t";
         }
+        cout<<endl;
         for(int i=0; i<nodes.size(); i++)
         {
             for(int j=0; j<column.size(); j++)
             {
                 if(column[j]=="departmentId")
-                    cout<<"\t"<<nodes[i]->data.departmentId<<"\t";
+                    cout<<nodes[i]->data.departmentId<<"\t\t";
                 else if(column[j]=="departmentName")
-                    cout<<"\t"<<nodes[i]->data.departmentName<<"\t"<<endl;
-            }
+                    cout<<nodes[i]->data.departmentName<<"\t\t"<<endl;
 
+
+            }
+  cout<<endl ;
         }
 
 
@@ -610,25 +613,27 @@ public:
     {
         for(int i=0; i<column.size(); i++)
         {
-            cout<<"\t"<<column[i]<<"\t";
+            cout<<column[i]<<"\t\t";
         }
         cout<<endl;
         for(int i=0; i<nodes.size(); i++)
         {
             for(int j=0; j<column.size(); j++)
             {
-                if(column[j]=="studentId")
-                    cout<<"\t"<<nodes[i]->data.studentId<<"\t";
+                  if(column[j]=="studentId")
+                    cout<<nodes[i]->data.studentId<<"\t\t\t";
                 else if(column[j]=="studentFirstName")
-                    cout<<"\t"<<nodes[i]->data.studentFirstName<<"\t";
+                    cout<<nodes[i]->data.studentFirstName<<"\t\t\t\t";
                 else if(column[j]=="studentLastName")
-                    cout<<"\t"<<nodes[i]->data.studentLastName<<"\t";
+                    cout<<nodes[i]->data.studentLastName<<"\t\t\t";
                 else if(column[j]=="studentAge")
-                    cout<<"\t"<<nodes[i]->data.studentAge<<"\t";
+                    cout<<nodes[i]->data.studentAge<<"\t\t\t";
                 else if(column[j]=="departmentId")
-                    cout<<"\t"<<nodes[i]->data.departmentId<<"\t"<<endl;
+                    cout<<nodes[i]->data.departmentId<<"\t\t\t"<<endl;
+
+
             }
-            cout<<endl;
+             cout <<endl;
         }
 
     }
@@ -767,7 +772,7 @@ public:
 
         return QuaryReturn<N> (beforeResult,index);
     }
-    template <class L,class N,class C>
+   template <class L,class N,class C>
     static QuaryReturn<N> insertQuery(L & tableAsLinkedList,vector<Condition> data)
     {
         vector<Condition> id;
@@ -779,18 +784,11 @@ public:
         if(searched.size()==0)
         {
             C comperable=Utilities::generateUpdatedClass<C>(data);
-            if(Utilities::checkValidationDepartment(&departmentTable,comperable.getDepartmentId()))
-            {
                 beforeResult.push_back(comperable.genarateNode());
                 tableAsLinkedList.append(comperable.genarateNode());
                 index.push_back(tableAsLinkedList.getIndexOf(beforeResult.back()));
-
-            }
-            else
-                cout<<"Can't Add This Student , his Department not exist"<<endl;
         }
-        else
-            return QuaryReturn<N> (beforeResult,index);
+        return QuaryReturn<N> (beforeResult,index);
     }
 
     template <class L,class N,class C>
@@ -962,6 +960,7 @@ void selectOperation(string queryStatment)
 
                 if (columns[0]=="*")
                 {
+                    columns.pop_back();
                     columns.push_back("studentId");
                     columns.push_back("studentFirstName");
                     columns.push_back("studentLastName");
@@ -976,6 +975,7 @@ void selectOperation(string queryStatment)
             {
                 if (columns[0]=="*")
                 {
+                    columns.pop_back();
                     columns.push_back("departmentId");
                     columns.push_back("departmentName");
 
@@ -1128,15 +1128,20 @@ void insertOperation(string insertQuery)
             attribute=attribute.substr(0, attribute.find(")"));
 
 
-            cout<<"attribute"<<attribute <<endl ;
             vector<string> valuesToInsert=splitColumn(attribute);
             vector<Condition> data =Utilities::convetStringToData(valuesToInsert,fileName);
             vector<int> index;
-            if(fileName=="student" && valuesToInsert.size()==5)
+           if(fileName=="student" && valuesToInsert.size()==5)
             {
-                QuaryReturn<Node<Student> > beforeUpdate=OurSQL::insertQuery<Table<Student>,Node<Student>,Student>(studentTable,data);
-                undoStudentStack.doInsert(beforeUpdate.index,&studentTable,beforeUpdate.beforeResult);
-                Utilities::undoTypeName.push_back("student");
+                 if(Utilities::checkValidationDepartment(&departmentTable,atoi(data[4].value.c_str())))
+                {
+                   QuaryReturn<Node<Student> > beforeUpdate=OurSQL::insertQuery<Table<Student>,Node<Student>,Student>(studentTable,data);
+                    undoStudentStack.doInsert(beforeUpdate.index,&studentTable,beforeUpdate.beforeResult);
+                    Utilities::undoTypeName.push_back("student");
+                }
+                else
+                    cout<<"Can't Add This Student , his Department not exist"<<endl;
+
             }
             else if (fileName=="department" && valuesToInsert.size()==2)
             {
@@ -1165,13 +1170,12 @@ bool isValidColumns(vector<string> column,string fileName)
     studentColumns.push_back("studentLastName");
     studentColumns.push_back("studentAge");
     studentColumns.push_back("departmentId");
-
+    departmentColumns.push_back("*");
     departmentColumns.push_back("departmentId");
     departmentColumns.push_back("departmentName");
-    departmentColumns.push_back("*");
+
     if (fileName == "student")
     {
-        cout <<"colimn [0]"<<column[0]<<"&" ;
         if (studentColumns[0]=="*")
             return  true;
 
@@ -1192,7 +1196,6 @@ bool isValidColumns(vector<string> column,string fileName)
     }
     else if (fileName=="department")
     {
-        cout <<"colimn [0] "<<column[0]<<"&";
         if (departmentColumns[0]=="*"&&departmentColumns.size()==0)
             return  true;
         for(int i=0; i<column.size(); i++)
@@ -1229,7 +1232,6 @@ bool isValidColumns(vector<Condition> column,string fileName)
     {
         for(int i=0; i<column.size(); i++)
         {
-            cout <<"$"<<column[i].name<<"$";
             if(column[i].name == studentColumns[0]||column[i].name == studentColumns[1] || column[i].name == studentColumns[2]
                     ||column[i].name == studentColumns[3]||column[i].name == studentColumns[4])
             {
@@ -1265,37 +1267,44 @@ void help()
     cout<<endl;
     cout<<"\t\t\t\t\tSQL Commands:"<<endl;
     cout<<"  _____________________________________________________________________________________________"<<endl;
-    cout<<" |you can select using : SELECT column_name FROM table_name;                                   |"<<endl;
-    cout<<" |For example : SELECT fname FROM student;                                                     |"<<endl;
+    cout<<" |you can select using : select column_name FROM table_name                                    |"<<endl;
+    cout<<" |For example : select studentFirstName  from student                                          |"<<endl;
     cout<<" |_____________________________________________________________________________________________|"<<endl;
-    cout<<" |you can select using : SELECT column_names FROM table_name;                                  |"<<endl;
-    cout<<" |For example : SELECT fname,lname FROM student;                                               |"<<endl;
+    cout<<" |you can select using : select column_names FROM table_name                                   |"<<endl;
+    cout<<" |For example : select studentFirstName,studentLastName from student                           |"<<endl;
     cout<<" |_____________________________________________________________________________________________|"<<endl;
-    cout<<" |you can select using : SELECT All_columns FROM table_name;                                   |"<<endl;
-    cout<<" |For example : SELECT * FROM student;                                                         |"<<endl;
+    cout<<" |you can select all column : select All_columns FROM table_name                               |"<<endl;
+    cout<<" |For example : select * from student                                                          |"<<endl;
+    cout<<" |__________________________________________________________________________________ __________|"<<endl;
+    cout<<" |you can insert data  using : insert into table_name values (value1, value2, value3, ...)     |"<<endl;
+    cout<<" |For example : insert into student values (1,awd,amin,25,1)                                   |"<<endl;
     cout<<" |_____________________________________________________________________________________________|"<<endl;
-    cout<<" |you can insert data  using : INSERT INTO table_name VALUES (value1, value2, value3, ...);    |"<<endl;
-    cout<<" |For example : insert into student values (1,Asmaa,Fathy,25,1);                               |"<<endl;
+    cout<<" |you can delete from table using : delete from table_name where some_column = some_value      |"<<endl;
+    cout<<" |For example : delete from student where departmentId = 1                                     |"<<endl;
     cout<<" |_____________________________________________________________________________________________|"<<endl;
-    cout<<" |you can delete from table using : DELETE FROM table_name WHERE some_column = some_value;     |"<<endl;
-    cout<<" |For example : delete from student where departmentId = 1;                                    |"<<endl;
-    cout<<" |_____________________________________________________________________________________________|"<<endl;
-    cout<<" |you can modify data  using : DELETE FROM table_name WHERE some_column = some_value;          |"<<endl;
-    cout<<" |For example : update student set student fname = Asmaa where studentId = 3;                  |"<<endl;
+    cout<<" |you can modify data  using : DELETE FROM table_name WHERE some_column = some_value           |"<<endl;
+    cout<<" |For example : update student set  studentFirstName = Asmaa where studentId = 3               |"<<endl;
     cout<<" |_____________________________________________________________________________________________|"<<endl;
 }
 int main()
 {
+    system("color 4f");
     departmentTable.getFromFile();
     studentTable.getFromFile();
+    cout<< "for help enter help , to save data to file enter save to exit enter exit 'case sensetive'\n" ;
 
 string sqlStatement ;
     while(true)
     {
-        cout<< "Enter your query" <<endl;
+        cout<<"Enter your query" <<endl;
         getline(cin,sqlStatement)  ;
         if(sqlStatement=="exit")
+        {
+                departmentTable.saveToFile();
+        studentTable.saveToFile()
             break;
+        }
+
         else
             analyseQuery(sqlStatement);
     }
@@ -1340,6 +1349,12 @@ void analyseQuery(string query)
     }
     else if (token =="help")
         help();
+          else if (token == "save")
+    {
+        departmentTable.saveToFile();
+        studentTable.saveToFile();
+        cout<<"data saved to the files  \n" ;
+    }
     else
         cout<<"query out of scope "<<endl ;
 }
