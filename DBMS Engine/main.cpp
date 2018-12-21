@@ -297,6 +297,7 @@ public:
             length--;
         }
     }
+
     void insertFirst(Node<L>* temp)
     {
         temp->next = head;
@@ -455,7 +456,7 @@ public:
     {
         StackNode<L> stackNode;
         stackNode.operation = "update";
-        stackNode.node=node;
+        stackNode.node = node;
         stackNode.table = table;
         stackNode.index = index;
         S1.push(stackNode);
@@ -516,13 +517,17 @@ public:
 
     static bool undo()
     {
-        string table=Utilities::undoTypeName.back();
-        if(table=="student")
-            undoStudentStack.undo();
-        else if(table=="department")
-            undoDepartmentStack.undo();
-        Utilities::undoTypeName.pop_back();
-        return true;
+        if(Utilities::undoTypeName.size()>0)
+        {
+            string table=Utilities::undoTypeName.back();
+            if(table=="student")
+                undoStudentStack.undo();
+            else if(table=="department")
+                undoDepartmentStack.undo();
+            Utilities::undoTypeName.pop_back();
+            return true;
+        }
+        return false;
     }
 
 
@@ -1076,7 +1081,6 @@ void updateOpertaion(string queryStatment)
             }
 
         }
-
         else
         {
             columnsToUpdate = queryStatment ;
@@ -1112,9 +1116,14 @@ void insertOperation(string insertQuery)
         insertQuery=removeSpaces(insertQuery);
         if(isFileCreated(fileName))
         {
-            attribute=insertQuery.substr(insertQuery.find("(")+1, insertQuery.find(")")-8);
+            attribute=insertQuery.substr(insertQuery.find("(")+1, insertQuery.find(")"));
+            attribute=attribute.substr(0, attribute.find(")"));
+
+
+            cout<<"attribute"<<attribute <<endl ;
             vector<string> valuesToInsert=splitColumn(attribute);
             vector<Condition> data =Utilities::convetStringToData(valuesToInsert,fileName);
+            vector<int> index;
             if(fileName=="student" && valuesToInsert.size()==5)
             {
                 QuaryReturn<Node<Student> > beforeUpdate=OurSQL::insertQuery<Table<Student>,Node<Student>,Student>(studentTable,data);
@@ -1123,8 +1132,13 @@ void insertOperation(string insertQuery)
             }
             else if (fileName=="department" && valuesToInsert.size()==2)
             {
+                QuaryReturn<Node<Department> > beforeUpdate=OurSQL::insertQuery<Table<Department>,Node<Department>,Department>(departmentTable,data);
+                undoDepartmentStack.doInsert(beforeUpdate.index,&departmentTable,beforeUpdate.beforeResult);
+                Utilities::undoTypeName.push_back("department");
 
             }
+            else
+                cout <<"you should enter valid table name and values"<<endl;
         }
     }
     else
@@ -1238,6 +1252,30 @@ bool isValidColumns(vector<Condition> column,string fileName)
         return true ;
     }
 }
+void help()
+{
+    cout<<endl;
+    cout<<"\t\t\t\t\tSQL Commands:"<<endl;
+    cout<<"  _______________________________"<<endl;
+    cout<<" |you can select using : SELECT column_name FROM table_name;                                   |"<<endl;
+    cout<<" |For example : SELECT fname FROM student;                                                     |"<<endl;
+    cout<<" |_______________________________|"<<endl;
+    cout<<" |you can select using : SELECT column_names FROM table_name;                                  |"<<endl;
+    cout<<" |For example : SELECT fname,lname FROM student;                                               |"<<endl;
+    cout<<" |_______________________________|"<<endl;
+    cout<<" |you can select using : SELECT All_columns FROM table_name;                                   |"<<endl;
+    cout<<" |For example : SELECT * FROM student;                                                         |"<<endl;
+    cout<<" |_______________________________|"<<endl;
+    cout<<" |you can insert data  using : INSERT INTO table_name VALUES (value1, value2, value3, ...);    |"<<endl;
+    cout<<" |For example : insert into student values (1,Asmaa,Fathy,25,1);                               |"<<endl;
+    cout<<" |_______________________________|"<<endl;
+    cout<<" |you can delete from table using : DELETE FROM table_name WHERE some_column = some_value;     |"<<endl;
+    cout<<" |For example : delete from student where departmentId = 1;                                    |"<<endl;
+    cout<<" |_______________________________|"<<endl;
+    cout<<" |you can modify data  using : DELETE FROM table_name WHERE some_column = some_value;          |"<<endl;
+    cout<<" |For example : update student set student fname = Asmaa where studentId = 3;                  |"<<endl;
+    cout<<" |_______________________________|"<<endl;
+}
 int main()
 {
     departmentTable.append( Department(1,"dept").genarateNode());
@@ -1258,24 +1296,29 @@ int main()
     // update and insert finished validation;
 //    string sqlStatement = "update student set studentFirstName = abdelrahman where departmentId = 1";
 //    string sqlStatement = "delete from student where departmentId = 1 ";
-     string sqlStatement = "insert into student values (1,abdelrahman,awad,25,1";
+    string sqlStatement = "insert into student values (1,abdelrahman,awad,25,1";
+
     // string sqlS = "insert into student values (9,abdo,amin,25,1";
 //    string sqlStatement = "select * from student  ";
 //    string sqlStatement="undo";
 
-
-    cout<<sqlStatement<<endl;
-    studentTable.display();
-    cout<<"---------------------------------------------------------------------------------"<<endl;
-    analyseQuery(sqlStatement);
+    // cout<<sqlStatement<<endl;
+    // analyseQuery(sqlStatement);
 //    analyseQuery(sqlS);
-    studentTable.display();
-    cout<<"---------------------------------------------------------------------------------"<<endl;
+//    studentTable.display();
 
-    Utilities::undo();
-    studentTable.display();
-    cout<<"---------------------------------------------------------------------------------"<<endl;
 
+    while(true)
+    {
+        cout<< " enter your query" <<endl;
+        std::getline(std::cin,sqlStatement)  ;
+        if(sqlStatement=="exit")
+            break;
+        else
+            analyseQuery(sqlStatement);
+    }
+//
+//    studentTable.display();
     return 0;
 
 }
@@ -1308,7 +1351,12 @@ void analyseQuery(string query)
         insertOperation(remainingStatement);
     }
     else if (token=="undo")
-        cout<<"i want to undo ya ismail beeh " ;
+    {
+        Utilities::undo();
+
+    }
+    else if (token =="help")
+        help();
     else
         cout<<"query out of scope "<<endl ;
 }
