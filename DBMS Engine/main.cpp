@@ -443,7 +443,6 @@ public:
 
     void undoDelete(StackNode<L> stackNode)
     {
-
         for(int i = 0 ; i < stackNode.index.size(); i++)
         {
             stackNode.table ->insertIntoPosition(stackNode.node[i],stackNode.index[i]);
@@ -678,17 +677,9 @@ public:
 
     Node<Student>* genarateNode()
     {
-
-        //TODO check if department exist
-        if(Utilities::checkValidationDepartment(&departmentTable,departmentId))
-        {
             Node<Student>* temp=new Node<Student>;
             temp->data=*this;
             return temp;
-        }
-        else
-            cout<<"Can't Add This Student , his Department not in list"<<endl;
-        return NULL;
     }
 
     bool compare(Student checkedStudent)
@@ -788,13 +779,18 @@ public:
         if(searched.size()==0)
         {
             C comperable=Utilities::generateUpdatedClass<C>(data);
-            beforeResult.push_back(comperable.genarateNode());
-            tableAsLinkedList.append(comperable.genarateNode());
-            index.push_back(tableAsLinkedList.getIndexOf(beforeResult.back()));
-            return QuaryReturn<N> (beforeResult,index);
+            if(Utilities::checkValidationDepartment(&departmentTable,comperable.getDepartmentId()))
+            {
+                beforeResult.push_back(comperable.genarateNode());
+                tableAsLinkedList.append(comperable.genarateNode());
+                index.push_back(tableAsLinkedList.getIndexOf(beforeResult.back()));
+
+            }
+            else
+                cout<<"Can't Add This Student , his Department not exist"<<endl;
         }
         else
-            return QuaryReturn<N> (beforeResult,index);;
+            return QuaryReturn<N> (beforeResult,index);
     }
 
     template <class L,class N,class C>
@@ -1022,8 +1018,21 @@ void deleteOperation(string queryStatment)
                 }
                 else if(fileName == "department")
                 {
-                    QuaryReturn<Node<Department> > beforeUpdate=OurSQL::deleteQuery<Table<Department>,Node<Department>,Department>(departmentTable,conditons);
-                    undoDepartmentStack.doDelete(beforeUpdate.index,&departmentTable,beforeUpdate.beforeResult);
+                    QuaryReturn<Node<Department> > beforeUpdateDepartment=OurSQL::deleteQuery<Table<Department>,Node<Department>,Department>(departmentTable,conditons);
+                    for(int i=0;i<beforeUpdateDepartment.beforeResult.size();i++)
+                        {
+                        stringstream sstm;
+                        sstm << beforeUpdateDepartment.beforeResult[i]->data.getDepartmentId();
+                        vector<Condition> con;
+                        con.push_back(Condition("departmentId",sstm.str()));
+                        QuaryReturn<Node<Student> > beforeUpdateStudent
+                        =OurSQL::deleteQuery<Table<Student>,Node<Student>,Student>
+                        (studentTable,con);
+
+                        undoStudentStack.doDelete(beforeUpdateStudent.index,&studentTable,beforeUpdateStudent.beforeResult);
+                        Utilities::undoTypeName.push_back("student");
+                    }
+                    undoDepartmentStack.doDelete(beforeUpdateDepartment.index,&departmentTable,beforeUpdateDepartment.beforeResult);
                     Utilities::undoTypeName.push_back("department");
                 }
                 else
@@ -1255,25 +1264,25 @@ void help()
 {
     cout<<endl;
     cout<<"\t\t\t\t\tSQL Commands:"<<endl;
-    cout<<"  _______________________________"<<endl;
+    cout<<"  _____________________________________________________________________________________________"<<endl;
     cout<<" |you can select using : SELECT column_name FROM table_name;                                   |"<<endl;
     cout<<" |For example : SELECT fname FROM student;                                                     |"<<endl;
-    cout<<" |_______________________________|"<<endl;
+    cout<<" |_____________________________________________________________________________________________|"<<endl;
     cout<<" |you can select using : SELECT column_names FROM table_name;                                  |"<<endl;
     cout<<" |For example : SELECT fname,lname FROM student;                                               |"<<endl;
-    cout<<" |_______________________________|"<<endl;
+    cout<<" |_____________________________________________________________________________________________|"<<endl;
     cout<<" |you can select using : SELECT All_columns FROM table_name;                                   |"<<endl;
     cout<<" |For example : SELECT * FROM student;                                                         |"<<endl;
-    cout<<" |_______________________________|"<<endl;
+    cout<<" |_____________________________________________________________________________________________|"<<endl;
     cout<<" |you can insert data  using : INSERT INTO table_name VALUES (value1, value2, value3, ...);    |"<<endl;
     cout<<" |For example : insert into student values (1,Asmaa,Fathy,25,1);                               |"<<endl;
-    cout<<" |_______________________________|"<<endl;
+    cout<<" |_____________________________________________________________________________________________|"<<endl;
     cout<<" |you can delete from table using : DELETE FROM table_name WHERE some_column = some_value;     |"<<endl;
     cout<<" |For example : delete from student where departmentId = 1;                                    |"<<endl;
-    cout<<" |_______________________________|"<<endl;
+    cout<<" |_____________________________________________________________________________________________|"<<endl;
     cout<<" |you can modify data  using : DELETE FROM table_name WHERE some_column = some_value;          |"<<endl;
     cout<<" |For example : update student set student fname = Asmaa where studentId = 3;                  |"<<endl;
-    cout<<" |_______________________________|"<<endl;
+    cout<<" |_____________________________________________________________________________________________|"<<endl;
 }
 int main()
 {
