@@ -44,6 +44,19 @@ struct Node
 
 };
 
+template <class T>
+struct QuaryReturn
+{
+    vector<T*> beforeResult;
+    vector<int> index;
+    QuaryReturn();
+    QuaryReturn(vector<T*> _beforeResult,vector<int> _index)
+    {
+        beforeResult=_beforeResult;
+        index=_index;
+    }
+};
+
 class Department
 {
     int departmentId;
@@ -207,7 +220,7 @@ public:
         Node<L>* temp= head;
         while(temp !=NULL)
         {
-            if ( node == temp)
+            if ( node->data.compare( temp->data))
             {
                 return counter;
             }
@@ -218,15 +231,9 @@ public:
         return -1;
 
     }
-    /* ******* */
+
     void insertIntoPosition(Node<L>* node,int index)
     {
-        /*    Node<L>* temp= head;
-            for (int i = 1 ; i < index ; i++){
-                 temp =  temp -> next;
-            }
-            */
-
         if (index < -1 || index > length)
         {
             cout << "Your List max index is : " << length - 1 << " and you can not do this step\n";
@@ -235,7 +242,7 @@ public:
             insertFirst(node);
         else if (index == length)
             append(node);
-        else if (index <= length / 2)
+        else
         {
             Node<L>* temp = head;
             for (int i = 1 ; i < index ; i++)
@@ -247,25 +254,8 @@ public:
             temp->next = node;
             length++;
         }
-        else
-        {
-            int count  = length - 1;
-            Node<L>* temp = tail;
-            while (index + 1 < count)
-            {
-                temp = temp->prev;
-                count--;
-            }
-            node ->prev = temp->prev;
-            node ->next = temp;
-            temp ->prev = node;
-            length++;
-        }
-
     }
 
-//
-    /* ******* */
     void deleteFromPosition(int index)
     {
         if (index <= -1 || index >= length)
@@ -275,9 +265,6 @@ public:
         else if (index == 0)
         {
             Node<L>* temp = head;
-            /* Node *a;
-             a = head;*/
-
             head = temp->next;
             if (length == 1)
                 tail = NULL;
@@ -289,23 +276,16 @@ public:
         else if (index == length - 1)
         {
             Node<L>* temp = tail;
-            /* Node *a;
-             a = tail;
-             */
-
             tail = temp->prev;
             temp->prev->next = NULL;
             delete temp;
             length--;
         }
-        else if (index<length / 2)
+        else
         {
             Node<L>* b;
             Node<L>* temp = head;
-            /*    Node *a, *b;
-                a = head;
-            */
-            for(int i=0; i<index; i++)
+            for(int i=0; i<index-1; i++)
             {
                 temp = temp->next;
             }
@@ -316,29 +296,7 @@ public:
             delete temp;
             length--;
         }
-        else
-        {
-            count = length - 1;
-            Node<L>* b;
-            Node<L>* temp = tail;
-            /* Node *a, *b;
-             temp = tail;
-              */
-            while (index + 1 < count)
-            {
-                temp = temp->prev;
-                count--;
-            }
-            b = temp;
-            temp = temp->prev;
-            b->prev = temp->prev;
-            temp->prev->next = b;
-            delete temp;
-            length--;
-        }
     }
-
-    /* ******* */
     void insertFirst(Node<L>* temp)
     {
         temp->next = head;
@@ -410,6 +368,7 @@ public:
                 tail -> next = temp;
                 tail = temp;
             }
+            length++;
             return true;
         }
         else
@@ -465,48 +424,30 @@ public:
 
     void undoUpdate(StackNode<L> stackNode) // make update inside table with previous values
     {
-        for(int i = 0 ; i < stackNode.index.size(); i++)
+        for(int i = stackNode.index.size()-1 ; i >=0; i--)
         {
             stackNode.table ->deleteFromPosition(stackNode.index[i]);
             stackNode.table ->insertIntoPosition(stackNode.node[i],stackNode.index[i]);
         }
-        /*
-                vector<int> updatedNodeIndex = stackNode.table ->getIndexOf(stackNode);
-                for(int i =0 ; i < updatedNodeIndex.size();i++){
-                    stackNode.table->append()
-                }
-                */
+
     }
 
-    void undoInsert(StackNode<L> stackNode) // make delete inside table
+    void undoInsert(StackNode<L> stackNode)
     {
-        for(int i = 0 ; i < stackNode.index.size(); i++)
+        for(int i = stackNode.index.size()-1 ; i >=0; i--)
         {
             stackNode.table ->deleteFromPosition(stackNode.index[i]);
         }
-        /*
-        vector<int> updatedNodeIndex = stackNode.table ->getIndexOf(stackNode);
-        for(int i =0 ; i < updatedNodeIndex.size();i++){
-            stackNode.table->deleteFromPosition(updatedNodeIndex[i]);
-        }
-
-        */
 
     }
 
-    void undoDelete(StackNode<L> stackNode) // make insert inside table
+    void undoDelete(StackNode<L> stackNode)
     {
 
         for(int i = 0 ; i < stackNode.index.size(); i++)
         {
             stackNode.table ->insertIntoPosition(stackNode.node[i],stackNode.index[i]);
         }
-
-        /*    vector<int> updatedNodeIndex = stackNode.table ->getIndexOf(stackNode);
-         for(int i =0 ; i < updatedNodeIndex.size();i++){
-             stackNode.table->insertIntoPosition(stackNode.node,updatedNodeIndex);
-         }
-         */
     }
 
 
@@ -514,7 +455,7 @@ public:
     {
         StackNode<L> stackNode;
         stackNode.operation = "update";
-        stackNode.node(node);
+        stackNode.node=node;
         stackNode.table = table;
         stackNode.index = index;
         S1.push(stackNode);
@@ -573,12 +514,14 @@ public:
         return temp.generateUpdated(attribute);
     }
 
-    static bool undo(string table)
+    static bool undo()
     {
+        string table=Utilities::undoTypeName.back();
         if(table=="student")
-             undoStudentStack.undo();
+            undoStudentStack.undo();
         else if(table=="department")
-             undoDepartmentStack.undo();
+            undoDepartmentStack.undo();
+        Utilities::undoTypeName.pop_back();
         return true;
     }
 
@@ -790,54 +733,64 @@ class OurSQL
 public:
 
     template <class L,class N,class C>
-    static vector<N*> updateQuery(L  tableAsLinkedList,vector<Condition> conditions,vector<Condition> setOfValues)
+    static QuaryReturn<N>  updateQuery(L  tableAsLinkedList,vector<Condition> conditions,vector<Condition> setOfValues)
     {
         C condition=Utilities::generateUpdatedClass<C>(conditions);
         vector<N*> searched=tableAsLinkedList.search(condition);
         vector<N*> beforeResult;
+        vector<int> index;
         if(searched.size()>0)
         {
             C comperable=Utilities::generateUpdatedClass<C>(setOfValues);
             for(int i=0; i<searched.size(); i++)
             {
                 beforeResult.push_back(searched[i]->data.genarateNode());
-                searched[i]->data.swap(comperable); //ToDo Change Node To be generic
+                index.push_back(tableAsLinkedList.getIndexOf(beforeResult.back()));
+                searched[i]->data.swap(comperable);
             }
         }
-        return beforeResult;
+        return QuaryReturn<N> (beforeResult,index);
     }
 
 
     template <class L,class N,class C>
-    static vector<N*> deleteQuery(L& tableAsLinkedList,vector<Condition> conditions)
+    static QuaryReturn<N> deleteQuery(L& tableAsLinkedList,vector<Condition> conditions)
     {
         C condition=Utilities::generateUpdatedClass<C>(conditions);
         vector<N*> searched=tableAsLinkedList.search(condition);
         vector<N*> beforeResult;
+        vector<int> index;
         if(searched.size() > 0)
         {
             for(int i= 0 ; i< searched.size() ; i++)
             {
                 beforeResult.push_back(searched[i]->data.genarateNode());
+                index.push_back(tableAsLinkedList.getIndexOf(beforeResult.back()));
                 tableAsLinkedList.deleteMethod(searched[i]);
             }
         }
-        return beforeResult;
+
+        return QuaryReturn<N> (beforeResult,index);
     }
     template <class L,class N,class C>
-    static bool insertQuery(L & tableAsLinkedList,vector<Condition> data)
+    static QuaryReturn<N> insertQuery(L & tableAsLinkedList,vector<Condition> data)
     {
         vector<Condition> id;
         id.push_back(data[0]);
         C uniqueID=Utilities::generateUpdatedClass<C>(id);
         vector<N*> searched=tableAsLinkedList.search(uniqueID);
+        vector<N*> beforeResult;
+        vector<int> index;
         if(searched.size()==0)
         {
             C comperable=Utilities::generateUpdatedClass<C>(data);
-            return tableAsLinkedList.append(comperable.genarateNode());
+            beforeResult.push_back(comperable.genarateNode());
+            tableAsLinkedList.append(comperable.genarateNode());
+            index.push_back(tableAsLinkedList.getIndexOf(beforeResult.back()));
+            return QuaryReturn<N> (beforeResult,index);
         }
         else
-            return false;
+            return QuaryReturn<N> (beforeResult,index);;
     }
 
     template <class L,class N,class C>
@@ -1016,6 +969,7 @@ void selectOperation(string queryStatment)
                     columns.push_back("departmentId");
                 }
 
+
                 OurSQL::selectQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columns);
             }
             else if (fileName=="department")
@@ -1028,6 +982,7 @@ void selectOperation(string queryStatment)
                 }
                 OurSQL::selectQuery<Table<Department>,Node<Department>,Department>(departmentTable,condition,columns);
             }
+
         }
         else
         {
@@ -1057,24 +1012,14 @@ void deleteOperation(string queryStatment)
             if(isValidColumns(conditons,fileName))
                 if(fileName == "student")
                 {
-                    vector<Node<Student>*> beforeUpdate=OurSQL::deleteQuery<Table<Student>,Node<Student>,Student>(studentTable,conditons);
-                    vector<int> index;
-                    for(int i=0; i<beforeUpdate.size(); i++)
-                    {
-                        index.push_back(studentTable.getIndexOf(beforeUpdate[i]));
-                    }
-                    undoStudentStack.doDelete(index,&studentTable,beforeUpdate);
+                    QuaryReturn<Node<Student> > beforeUpdate=OurSQL::deleteQuery<Table<Student>,Node<Student>,Student>(studentTable,conditons);
+                    undoStudentStack.doDelete(beforeUpdate.index,&studentTable,beforeUpdate.beforeResult);
                     Utilities::undoTypeName.push_back("student");
                 }
                 else if(fileName == "department")
                 {
-                    vector<Node<Department>*> beforeUpdate=OurSQL::deleteQuery<Table<Department>,Node<Department>,Department>(departmentTable,conditons);
-                    vector<int> index;
-                    for(int i=0; i<beforeUpdate.size(); i++)
-                    {
-                        index.push_back(departmentTable.getIndexOf(beforeUpdate[i]));
-                    }
-                    undoDepartmentStack.doDelete(index,&departmentTable,beforeUpdate);
+                    QuaryReturn<Node<Department> > beforeUpdate=OurSQL::deleteQuery<Table<Department>,Node<Department>,Department>(departmentTable,conditons);
+                    undoDepartmentStack.doDelete(beforeUpdate.index,&departmentTable,beforeUpdate.beforeResult);
                     Utilities::undoTypeName.push_back("department");
                 }
                 else
@@ -1109,19 +1054,20 @@ void updateOpertaion(string queryStatment)
             vector<Condition> condition=splitCondition(removeSpaces(conditions));
             if (isValidColumns(columnsAndValuesToUpdate,fileName))
             {
-                cout<<endl<< "check if column is valid "<<endl;
                 if(fileName == "student")
                 {
-//                    if(OurSQL::updateQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columnsAndValuesToUpdate))
-//                    {
-//                        //TODO  doUpdate();
-//                    }
-
+                    QuaryReturn<Node<Student> > beforeUpdate=OurSQL::updateQuery<Table<Student>,Node<Student>,Student>(studentTable,condition,columnsAndValuesToUpdate);
+                    undoStudentStack.doUpdate(beforeUpdate.index,&studentTable,beforeUpdate.beforeResult);
+                    Utilities::undoTypeName.push_back("student");
                 }
-                else if (fileName=="department")
+                else if(fileName == "department")
                 {
-
+                    QuaryReturn<Node<Department> > beforeUpdate=OurSQL::updateQuery<Table<Department>,Node<Department>,Department>(departmentTable,condition,columnsAndValuesToUpdate);
+                    undoDepartmentStack.doUpdate(beforeUpdate.index,&departmentTable,beforeUpdate.beforeResult);
+                    Utilities::undoTypeName.push_back("department");
                 }
+
+
             }
             else
             {
@@ -1171,10 +1117,9 @@ void insertOperation(string insertQuery)
             vector<Condition> data =Utilities::convetStringToData(valuesToInsert,fileName);
             if(fileName=="student" && valuesToInsert.size()==5)
             {
-                if(OurSQL::insertQuery<Table<Student>,Node<Student>,Student>(studentTable,data))
-                {
-                    //TODO  doUpdate();
-                }
+                QuaryReturn<Node<Student> > beforeUpdate=OurSQL::insertQuery<Table<Student>,Node<Student>,Student>(studentTable,data);
+                undoStudentStack.doInsert(beforeUpdate.index,&studentTable,beforeUpdate.beforeResult);
+                Utilities::undoTypeName.push_back("student");
             }
             else if (fileName=="department" && valuesToInsert.size()==2)
             {
@@ -1309,28 +1254,28 @@ int main()
     studentTable.append(Student(9,"mostafe","mostafe",50,1).genarateNode());
     studentTable.append(Student(7,"hamda","ismail",38,1).genarateNode());
 
-    vector<Node<Student>* > temp=studentTable.search(Student(-1,"","",-1,-1));
-    for(int i=0; i<temp.size(); i++)
-    {
-        cout<<(temp[i]->data.toString())<< "   *^%    ";
-    }
-
 
     // update and insert finished validation;
-    //string sqlStatement = "update student set student FirstName = abdelrahman where studentId = 3";
-    string sqlStatement = "delete from student where departmentId = 1 ";
-    // string sqlStatement = "insert into student values (1,abdelrahman,awad,25,1";
+//    string sqlStatement = "update student set studentFirstName = abdelrahman where departmentId = 1";
+//    string sqlStatement = "delete from student where departmentId = 1 ";
+     string sqlStatement = "insert into student values (1,abdelrahman,awad,25,1";
     // string sqlS = "insert into student values (9,abdo,amin,25,1";
 //    string sqlStatement = "select * from student  ";
 //    string sqlStatement="undo";
 
+
     cout<<sqlStatement<<endl;
+    studentTable.display();
+    cout<<"---------------------------------------------------------------------------------"<<endl;
     analyseQuery(sqlStatement);
 //    analyseQuery(sqlS);
     studentTable.display();
-    Utilities::undo(Utilities::undoTypeName.back());
-    Utilities::undoTypeName.pop_back();
-     studentTable.display();
+    cout<<"---------------------------------------------------------------------------------"<<endl;
+
+    Utilities::undo();
+    studentTable.display();
+    cout<<"---------------------------------------------------------------------------------"<<endl;
+
     return 0;
 
 }
