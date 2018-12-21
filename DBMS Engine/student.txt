@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-1;ismail;hamda;15;2
 2;ahmed;hamda;15;3
-=======
-1;ismail;hamda;15;2
-2;ahmed;hamda;15;3
->>>>>>> d0914b997839b5d23ed2bc44e307d9d7869066d4
+3;hassan;mostafe;20;1
+9;mostafe;mostafe;50;1
+7;hamda;ismail;38;1

@@ -208,7 +208,6 @@ public:
         L data;
         while ( outfile >>data )
         {
-            cout<<data.toString();
             append(data.genarateNode());
         }
         outfile.close();
@@ -1278,47 +1277,22 @@ void help()
 }
 int main()
 {
-    departmentTable.append( Department(1,"dept").genarateNode());
-    departmentTable.append(Department(2,"dept").genarateNode());
-    departmentTable.append(Department(3,"dept").genarateNode());
-    departmentTable.append(Department(4,"dept").genarateNode());
+    departmentTable.getFromFile();
+    studentTable.getFromFile();
 
-//    departmentLinkedList.display();
-    cout<<"------------------------------------------"<<endl;
-    studentTable.append(Student(1,"ismail","hamda",15,8).genarateNode());
-    studentTable.append(Student(2,"ahmed","hamda",15,3).genarateNode());
-//    studentLinkedList.display();
-    studentTable.append(Student(3,"hassan","mostafe",20,1).genarateNode());
-    studentTable.append(Student(9,"mostafe","mostafe",50,1).genarateNode());
-    studentTable.append(Student(7,"hamda","ismail",38,1).genarateNode());
-
-
-    // update and insert finished validation;
-//    string sqlStatement = "update student set studentFirstName = abdelrahman where departmentId = 1";
-//    string sqlStatement = "delete from student where departmentId = 1 ";
-    string sqlStatement = "insert into student values (1,abdelrahman,awad,25,1";
-
-    // string sqlS = "insert into student values (9,abdo,amin,25,1";
-//    string sqlStatement = "select * from student  ";
-//    string sqlStatement="undo";
-
-    // cout<<sqlStatement<<endl;
-    // analyseQuery(sqlStatement);
-//    analyseQuery(sqlS);
-//    studentTable.display();
-
-
+string sqlStatement ;
     while(true)
     {
-        cout<< " enter your query" <<endl;
-        std::getline(std::cin,sqlStatement)  ;
+        cout<< "Enter your query" <<endl;
+        getline(cin,sqlStatement)  ;
         if(sqlStatement=="exit")
             break;
         else
             analyseQuery(sqlStatement);
     }
-//
-//    studentTable.display();
+
+    departmentTable.saveToFile();
+    studentTable.saveToFile();
     return 0;
 
 }
