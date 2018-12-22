@@ -112,7 +112,7 @@ public:
 
 
             }
-  cout<<endl ;
+            cout<<endl ;
         }
 
 
@@ -620,7 +620,7 @@ public:
         {
             for(int j=0; j<column.size(); j++)
             {
-                  if(column[j]=="studentId")
+                if(column[j]=="studentId")
                     cout<<nodes[i]->data.studentId<<"\t\t\t";
                 else if(column[j]=="studentFirstName")
                     cout<<nodes[i]->data.studentFirstName<<"\t\t\t\t";
@@ -633,7 +633,7 @@ public:
 
 
             }
-             cout <<endl;
+            cout <<endl;
         }
 
     }
@@ -682,9 +682,9 @@ public:
 
     Node<Student>* genarateNode()
     {
-            Node<Student>* temp=new Node<Student>;
-            temp->data=*this;
-            return temp;
+        Node<Student>* temp=new Node<Student>;
+        temp->data=*this;
+        return temp;
     }
 
     bool compare(Student checkedStudent)
@@ -772,7 +772,7 @@ public:
 
         return QuaryReturn<N> (beforeResult,index);
     }
-   template <class L,class N,class C>
+    template <class L,class N,class C>
     static QuaryReturn<N> insertQuery(L & tableAsLinkedList,vector<Condition> data)
     {
         vector<Condition> id;
@@ -784,9 +784,9 @@ public:
         if(searched.size()==0)
         {
             C comperable=Utilities::generateUpdatedClass<C>(data);
-                beforeResult.push_back(comperable.genarateNode());
-                tableAsLinkedList.append(comperable.genarateNode());
-                index.push_back(tableAsLinkedList.getIndexOf(beforeResult.back()));
+            beforeResult.push_back(comperable.genarateNode());
+            tableAsLinkedList.append(comperable.genarateNode());
+            index.push_back(tableAsLinkedList.getIndexOf(beforeResult.back()));
         }
         return QuaryReturn<N> (beforeResult,index);
     }
@@ -1019,15 +1019,15 @@ void deleteOperation(string queryStatment)
                 else if(fileName == "department")
                 {
                     QuaryReturn<Node<Department> > beforeUpdateDepartment=OurSQL::deleteQuery<Table<Department>,Node<Department>,Department>(departmentTable,conditons);
-                    for(int i=0;i<beforeUpdateDepartment.beforeResult.size();i++)
-                        {
+                    for(int i=0; i<beforeUpdateDepartment.beforeResult.size(); i++)
+                    {
                         stringstream sstm;
                         sstm << beforeUpdateDepartment.beforeResult[i]->data.getDepartmentId();
                         vector<Condition> con;
                         con.push_back(Condition("departmentId",sstm.str()));
                         QuaryReturn<Node<Student> > beforeUpdateStudent
-                        =OurSQL::deleteQuery<Table<Student>,Node<Student>,Student>
-                        (studentTable,con);
+                            =OurSQL::deleteQuery<Table<Student>,Node<Student>,Student>
+                             (studentTable,con);
 
                         undoStudentStack.doDelete(beforeUpdateStudent.index,&studentTable,beforeUpdateStudent.beforeResult);
                         Utilities::undoTypeName.push_back("student");
@@ -1131,11 +1131,11 @@ void insertOperation(string insertQuery)
             vector<string> valuesToInsert=splitColumn(attribute);
             vector<Condition> data =Utilities::convetStringToData(valuesToInsert,fileName);
             vector<int> index;
-           if(fileName=="student" && valuesToInsert.size()==5)
+            if(fileName=="student" && valuesToInsert.size()==5)
             {
-                 if(Utilities::checkValidationDepartment(&departmentTable,atoi(data[4].value.c_str())))
+                if(Utilities::checkValidationDepartment(&departmentTable,atoi(data[4].value.c_str())))
                 {
-                   QuaryReturn<Node<Student> > beforeUpdate=OurSQL::insertQuery<Table<Student>,Node<Student>,Student>(studentTable,data);
+                    QuaryReturn<Node<Student> > beforeUpdate=OurSQL::insertQuery<Table<Student>,Node<Student>,Student>(studentTable,data);
                     undoStudentStack.doInsert(beforeUpdate.index,&studentTable,beforeUpdate.beforeResult);
                     Utilities::undoTypeName.push_back("student");
                 }
@@ -1293,15 +1293,15 @@ int main()
     studentTable.getFromFile();
     cout<< "for help enter help , to save data to file enter save to exit enter exit 'case sensetive'\n" ;
 
-string sqlStatement ;
+    string sqlStatement ;
     while(true)
     {
         cout<<"Enter your query" <<endl;
         getline(cin,sqlStatement)  ;
         if(sqlStatement=="exit")
         {
-                departmentTable.saveToFile();
-        studentTable.saveToFile()
+            departmentTable.saveToFile();
+            studentTable.saveToFile() ;
             break;
         }
 
@@ -1349,7 +1349,7 @@ void analyseQuery(string query)
     }
     else if (token =="help")
         help();
-          else if (token == "save")
+    else if (token == "save")
     {
         departmentTable.saveToFile();
         studentTable.saveToFile();
